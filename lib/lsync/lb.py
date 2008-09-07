@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- Mode: Python; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+
 """Link-Backup
 Copyright (c) 2004 Scott Ludwig
 http://www.scottlu.com
@@ -119,6 +122,12 @@ since only the catalog is being updated (however it would be a speedup).
  
 History:
 
+v 0.81 6/Sep/2008 Samuel Williams http://www.oriontransfer.co.nz/
+  - Added mode-line and #! line
+  - Fixed parsing of command line arguments that contain spaces to match rsync
+    (shlex parsing)
+  - Fixed escaping of ssh strings so that they get passed correctly
+
 v 0.8 12/23/2006 scottlu
   - allow backups to occur while files are changing
   - minor --verify command bug
@@ -205,6 +214,7 @@ import struct
 import re
 import glob
 import fcntl
+import shlex
 
 fd_send = None
 fd_recv = None
@@ -698,6 +708,15 @@ class Manager:
 
 # Helpers
 
+def dump_arg(x):
+    s = '"'
+    for c in x:
+        if c in '\\$"`':
+            s = s + '\\'
+        s = s + c
+    s = s + '"'
+    return s
+
 def start_server(src, dst, is_source):
     # Command line for server
 
@@ -706,7 +725,7 @@ def start_server(src, dst, is_source):
 	cmd1 = "%s --source" % cmd1
     for arg in sys.argv[1:-2]:
 	cmd1 = '%s %s' % (cmd1, arg)
-    cmd1 = "%s %s %s" % (cmd1, src['string'], dst['string'])
+    cmd1 = "%s %s %s" % (cmd1, dump_arg(src['string']), dump_arg(dst['string']))
 
     # Remote?
 
@@ -717,7 +736,7 @@ def start_server(src, dst, is_source):
     # Add ssh and args if remote
 
     if addr['remote']:
-	ssh_args = '%s \"%s\"' % (addr['remote'], cmd1)
+	ssh_args = '%s %s' % (addr['remote'], dump_arg(cmd1))
 	if have_option('--ssh-p'):
 	    ssh_args = '-p %s %s' % (get_option_value('--ssh-p'), ssh_args)
 	if have_option('--ssh-i'):
@@ -729,7 +748,6 @@ def start_server(src, dst, is_source):
 	cmd2 = cmd1
 
     # Start and pass this code
-
     verbose_log('command: %s' % cmd2)
     fdin, fdout = os.popen2(cmd2, mode='b')
     init_io(fdin, fdout)
@@ -1025,7 +1043,6 @@ def execute(src, dst, is_source):
     else:
 	# Receiving side
 	# Recv filelist and name mapping, perform uid/gid mapping
-
 	filelist = recv_object()
 	idname_map = recv_object()
 	map_uidgid(filelist, idname_map)
@@ -1148,6 +1165,11 @@ def parse_address(string):
     else:
 	addr['remote'] = ''
 	addr['path'] = string
+	
+    # Check to see if we are in quotes
+    # Unicode might be an issue here..
+    addr['path'] = shlex.split(addr['path'])[0]
+    
     return addr
 
 def have_option(option):
@@ -1253,14 +1275,14 @@ if __name__ == '__main__':
     if subdir != None:
 	srcpath = '%s/' % os.path.normpath(src['path'])
 	if (src['remote']):
-	    srcpath = src['remote'] + ':' + srcpath
+	    srcpath = src['remote'] + ':' + repr(srcpath)
 	dstpath = os.path.normpath(join(dst['path'], subdir))
 	if (dst['remote']):
-	    dstpath = dst['remote'] + ':' + dstpath
+	    dstpath = dst['remote'] + ':' + repr(dstpath)
 	if os.getuid() == 0 and have_option('--numeric-ids'):
-	    rsync_cmd = 'rsync -av --numeric-ids --dry-run "%s" "%s"' % (srcpath, dstpath)
+	    rsync_cmd = 'rsync -av --numeric-ids --dry-run %s %s' % (dump_arg(srcpath), dump_arg(dstpath))
 	else:
-	    rsync_cmd = 'rsync -av --dry-run "%s" "%s"' % (srcpath, dstpath)
+	    rsync_cmd = 'rsync -av --dry-run %s %s' % (dump_arg(srcpath), dump_arg(dstpath))
 
 	if have_option('--verify'):
 	    print rsync_cmd

@@ -1,0 +1,50 @@
+#!/usr/bin/env ruby
+
+require 'lsync'
+require 'lsync/version'
+require 'optparse'
+
+OPTIONS = {
+  :ConfigFiles => []
+}
+
+ARGV.options do |o|
+  script_name = File.basename($0)
+
+  o.set_summary_indent('  ')
+  o.banner = "Usage: #{script_name} [options] [directory | config]"
+  o.define_head "This script is used to run backups. If you specify a directory, files ending in .conf will all be processed."
+  
+  o.separator ""
+  o.separator "Help and Copyright information"
+
+  o.on_tail("--copy", "Display copyright information") {
+    puts "#{script_name} v#{LSync::VERSION::STRING}. Copyright (c) 2008 Samuel Williams. Released under the GPLv2."
+    puts "See http://www.oriontransfer.co.nz/ for more information."
+
+    exit
+  }
+
+  o.on_tail("-h", "--help", "Show this help message.") { puts o; exit }
+
+  o
+end.parse!
+
+ARGV.each do |p|
+  abort "Could not process #{p}" unless File.exists? p
+  
+  if File.directory? p
+    OPTIONS[:ConfigFiles] += Dir[File.join(p, "*.conf")]
+  else
+    OPTIONS[:ConfigFiles] << p
+  end
+end
+
+OPTIONS[:ConfigFiles].each do |c|
+  
+  config = LSync::Config.load_from_file(c)
+  
+  config.run_backup
+  
+end
+

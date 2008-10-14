@@ -1,28 +1,8 @@
 
+# A backup script coordinates "one" backup as a unit.
+
 require 'lsync/action'
 require 'lsync/method'
-
-class Hash
-  def keys_matching(p, &block)
-    s = {}
-    
-    self.each do |k,v|
-      next unless k.match(p)
-      
-      v = yield(v) if block_given?
-      
-      s[k] = v
-    end
-    
-    return s
-  end
-  
-  def collect_values
-    each do |k,v|
-      self[k] = yield v
-    end
-  end
-end
 
 module LSync
   
@@ -80,9 +60,8 @@ module LSync
     end
     
     def full_path(directory)
-      puts "Root: " + (@root || "/")
-      puts " Dir: " + directory.to_s
-      return File.expand_path(directory.to_s, @root || "/")
+			# Directories need to have trailing slashes
+      return File.expand_path(directory.to_s, @root || "/") + "/"
     end
     
     def host_location
@@ -134,7 +113,7 @@ module LSync
     include RunActions
   end
   
-  class Config
+  class BackupScript
   private
     def find_master_server(name)
       if @servers.key? name
@@ -159,6 +138,11 @@ module LSync
       
       @method = Method.new(config["method"])
     end
+
+		attr :master
+		attr :method
+		attr :servers
+		attr :directories
     
     def run_backup
       # Find out if the master server is local...

@@ -5,7 +5,8 @@ require 'lsync/version'
 require 'optparse'
 
 OPTIONS = {
-  :ConfigFiles => []
+  :ConfigFiles => [],
+  :Plan => nil
 }
 
 ARGV.options do |o|
@@ -18,6 +19,8 @@ ARGV.options do |o|
   o.separator ""
   o.separator "Help and Copyright information"
 
+  o.on("-p plan", String, "Run the specified backup plan") { |plan| OPTIONS[:Plan] = plan }
+  
   o.on_tail("--copy", "Display copyright information") {
     puts "#{script_name} v#{LSync::VERSION::STRING}. Copyright (c) 2008 Samuel Williams. Released under the GPLv2."
     puts "See http://www.oriontransfer.co.nz/ for more information."
@@ -41,10 +44,11 @@ ARGV.each do |p|
 end
 
 OPTIONS[:ConfigFiles].each do |c|
-  
-  config = LSync::Config.load_from_file(c)
-  
+  config = LSync::BackupScript.load_from_file(c)
   config.run_backup
-  
 end
 
+if OPTIONS[:Plan]
+	config = LSync::BackupPlan.load_from_file(OPTIONS[:Plan])
+	config.run_backup
+end

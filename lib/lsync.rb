@@ -17,14 +17,19 @@ $:.unshift(File.dirname(__FILE__)) unless
   $:.include?(File.dirname(__FILE__)) || $:.include?(File.expand_path(File.dirname(__FILE__)))
 
 require 'rubygems'
+
 gem 'termios'
 gem 'net-ssh'
+gem 'ruleby'
 
 require 'yaml'
 require 'socket'
+require 'set'
 
 require 'lsync/version'
-require 'lsync/config'
+require 'lsync/extensions'
+require 'lsync/backup-script'
+require 'lsync/backup-plan'
 
 require 'fileutils'
 require 'optparse'

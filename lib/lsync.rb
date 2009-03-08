@@ -25,11 +25,13 @@ gem 'ruleby'
 require 'yaml'
 require 'socket'
 require 'set'
+require 'logger'
 
 require 'lsync/version'
 require 'lsync/extensions'
 require 'lsync/backup-script'
 require 'lsync/backup-plan'
+require 'lsync/tee_logger'
 
 require 'fileutils'
 require 'optparse'
@@ -37,5 +39,34 @@ require 'optparse'
 require 'open-uri'
 
 module LSync
+  
+  class BackupError < Exception
+    def initialize(reason, components = {})
+      @reason = reason
+      @components = components
+    end
+    
+    def to_s
+      @reason
+    end
+    
+    attr :reason
+    attr :components
+  end
+  
+  class BackupScriptError < BackupError
+  end
+  
+  class BackupMethodError < BackupError
+  end
+  
+  class ConfigurationError < BackupError
+  end
+  
+  class BackupActionError < BackupError
+    def initialize(server, action, exception)
+      super("Backup action failed: #{action}", :action => action, :exception => exception)
+    end
+  end
   
 end

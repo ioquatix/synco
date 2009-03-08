@@ -5,242 +5,245 @@
 require 'ruleby'
 
 module Ruleby
-	def self.engine(name, &block)
-		e = Core::Engine.new
-		yield e if block_given?
-		return e
-	end
+  def self.engine(name, &block)
+    e = Core::Engine.new
+    yield e if block_given?
+    return e
+  end
 end
 
 module LSync
-	
-	BuiltInCommands = {
-		"ping-host" => "ping -c 4 -t 5 -o"
-	}
-	
-	module Facts
-		class Initial
-		end
 
-		class StageSucceeded
-			def initialize(stage)
-				@stage = stage
-				puts "Stage Succeeded: #{@stage.name}"
-			end
+  BuiltInCommands = {
+    "ping-host" => "ping -c 4 -t 5 -o"
+  }
 
-			attr :stage
+  module Facts
+    class Initial
+    end
 
-			def name
-				@stage.name
-			end
-		end
+    class StageSucceeded
+      def initialize(stage)
+        @stage = stage
+        puts "Stage Succeeded: #{@stage.name}"
+      end
 
-		class StageFailed
-			def initialize(stage)
-				@stage = stage
-			end
+      attr :stage
 
-			attr :stage
+      def name
+        @stage.name
+      end
+    end
 
-			def name
-				@stage.name
-			end
-		end
+    class StageFailed
+      def initialize(stage)
+        @stage = stage
+      end
 
-		class ScriptSucceeded
-			def initialize(stage, script)
-				@stage = stage
-				@script = script
-			end
+      attr :stage
 
-			attr :stage
-			attr :script
-		end
+      def name
+        @stage.name
+      end
+    end
 
-		class ScriptFailed
-			def initialize(stage, script)
-				@stage = stage
-				@script = script
-			end
+    class ScriptSucceeded
+      def initialize(stage, script)
+        @stage = stage
+        @script = script
+      end
 
-			attr :stage
-			attr :script
-		end
-	end
+      attr :stage
+      attr :script
+    end
 
-	class BackupPlanRulebook < Ruleby::Rulebook
-		include Facts
+    class ScriptFailed
+      def initialize(stage, script)
+        @stage = stage
+        @script = script
+      end
 
-		def rules
-			#rule [ScriptSucceeded, :m] do |v|
-			#	script = v[:m].script
-			#  puts "Backup #{script.dump} successful"
-			#end
+      attr :stage
+      attr :script
+    end
+  end
 
-			rule [ScriptFailed, :m] do |v|
-				script = v[:m].script
-				puts "*** Script #{script} failed"
-			end
+  class BackupPlanRulebook < Ruleby::Rulebook
+    include Facts
 
-			#rule [StageSucceeded, :m] do |v|
-			#	stage = v[:m].stage
-			#  puts "Stage #{stage.name.dump} successful"
-			#end
-		end
-	end
+    def rules
+      #rule [ScriptSucceeded, :m] do |v|
+      #	script = v[:m].script
+      #  puts "Backup #{script.dump} successful"
+      #end
 
-	class StageRulebook < Ruleby::Rulebook
-		include Facts
+      rule [ScriptFailed, :m] do |v|
+        script = v[:m].script
+        puts "*** Script #{script} failed"
+      end
 
-		def initialize(engine, stage)
-			super(engine)
-			@stage = stage
-		end
+      #rule [StageSucceeded, :m] do |v|
+      #	stage = v[:m].stage
+      #  puts "Stage #{stage.name.dump} successful"
+      #end
+    end
+  end
 
-		def rules
-			# Does this stage have any rules? (i.e. can it run in any case?)
-			if @stage.rules.size > 0
-				puts "Loading rules for stage #{@stage.name.dump}..."
-				@stage.rules.each do |name, r|
-					puts "\t#{name}..."
+  class StageRulebook < Ruleby::Rulebook
+    include Facts
 
-					r["when"].each do |s|
-						puts "\t\t#{s.dump}"
-					end
+    def initialize(engine, stage)
+      super(engine)
+      @stage = stage
+    end
 
-					options = r.dup
-					wh = options.delete("when")
+    def rules
+      # Does this stage have any rules? (i.e. can it run in any case?)
+      if @stage.rules.size > 0
+        puts "Loading rules for stage #{@stage.name.dump}..."
+        @stage.rules.each do |name, r|
+          puts "\t#{name}..."
 
-					# Build rule
-					rule("#{@stage.name}_#{name}".to_sym, options, *wh) do |v|
-						@stage.run_scripts
-					end
-				end
-			end
-		end
+          r["when"].each do |s|
+            puts "\t\t#{s.dump}"
+          end
 
-		# Bring names into the right scope (i.e. Facts)
-		def __eval__(x)
-			eval(x)
-		end
-	end
+          options = r.dup
+          wh = options.delete("when")
 
-	class Stage
-		protected
-		RuleConfigKeys = Set.new(["priority", "when"])
+          # Build rule
+          rule("#{@stage.name}_#{name}".to_sym, options, *wh) do |v|
+            @stage.run_scripts
+          end
+        end
+      end
+    end
 
-		def process_rules config			
-			rules = config.keys_matching(/^rule\.(.*)$/)
+    # Bring names into the right scope (i.e. Facts)
+    def __eval__(x)
+      eval(x)
+    end
+  end
 
-			if rules.size > 0
-				# Okay
-			elsif config.key? "when"
-				rules = {
-					"rule.default" => config.delete_if { |k,v| !RuleConfigKeys.include?(k) }
-				}
-			else
-				return {}
-			end
+  class Stage
+    protected
+    RuleConfigKeys = Set.new(["priority", "when"])
 
-			rules.keys.each do |rule_name|
-				options = {}
-				w = rules[rule_name].delete("when") || []
-				w = [w] if w.is_a? String
+    def process_rules config			
+      rules = config.keys_matching(/^rule\.(.*)$/)
 
-				rules[rule_name].each { |k,v| options[k.to_sym] = v }
-				rules[rule_name] = options
-				rules[rule_name]["when"] = w.collect { |s| s.gsub('@', '#') }
-			end
+      if rules.size > 0
+        # Okay
+      elsif config.key? "when"
+        rules = {
+          "rule.default" => config.delete_if { |k,v| !RuleConfigKeys.include?(k) }
+        }
+      else
+        return {}
+      end
 
-			rules
-		end
+      rules.keys.each do |rule_name|
+        options = {}
+        w = rules[rule_name].delete("when") || []
+        w = [w] if w.is_a? String
 
-		def process_scripts config
-			config["scripts"].collect do |s|
-				s.match(/^([^\s]+)(.*)$/)
-				
-				if BuiltInCommands.key? $1
-					BuiltInCommands[$1] + $2
-				else
-					s
-				end
-			end
-		end
+        rules[rule_name].each { |k,v| options[k.to_sym] = v }
+        rules[rule_name] = options
+        rules[rule_name]["when"] = w.collect { |s| s.gsub('@', '#') }
+      end
 
-		public
-		def initialize(plan, name, config)
-			@plan = plan
-			@name = name
+      rules
+    end
 
-			@scripts = process_scripts(config)
-			@rules = process_rules(config)
-		end
+    def process_scripts config
+      config["scripts"].collect do |s|
+        s.match(/^([^\s]+)(.*)$/)
 
-		def run_scripts
-			failed = false
+        if BuiltInCommands.key? $1
+          BuiltInCommands[$1] + $2
+        else
+          s
+        end
+      end
+    end
 
-			puts "Running stage #{@name}..."
-			@scripts.each do |script|
-				puts "\tRunning Script #{script}..."
+    public
+    def initialize(plan, name, config)
+      @plan = plan
+      @name = name
 
-				if system(script)
-					@plan.engine.assert Facts::ScriptSucceeded.new(self, script)
-				else
-					@plan.engine.assert Facts::ScriptFailed.new(self, script)
-					failed = true
-				end
-			end
+      @scripts = process_scripts(config)
+      @rules = process_rules(config)
+    end
 
-			if failed
-				@plan.engine.assert Facts::StageFailed.new(self)
-			else
-				@plan.engine.assert Facts::StageSucceeded.new(self)
-			end
-		end
+    def run_scripts
+      failed = false
 
-		attr :name
-		attr :scripts
-		attr :rules
-	end
+      puts "Running stage #{@name}..."
+      @scripts.each do |script|
+        puts "\tRunning Script #{script}..."
 
-	class BackupPlan
-		def initialize(config)
-			@config = config.keys_matching(/^scripts\.(.*)$/)
-			@stages = config.keys_matching(/^stage\.(.*)$/) { |c,name| Stage.new(self, name, c) }
-		end
+        if system(script)
+          @plan.engine.assert Facts::ScriptSucceeded.new(self, script)
+        else
+          @plan.engine.assert Facts::ScriptFailed.new(self, script)
+          failed = true
+        end
+      end
 
-		attr :config
+      if failed
+        @plan.engine.assert Facts::StageFailed.new(self)
+      else
+        @plan.engine.assert Facts::StageSucceeded.new(self)
+      end
+    end
 
-		def run_backup	    
-			Ruleby.engine :engine do |e|
-				@engine = e
+    attr :name
+    attr :scripts
+    attr :rules
+  end
 
-				puts " Loading Rules ".center(80, "=")
+  class BackupPlan
+    def initialize(config, logger = nil)
+      @logger = logger || Logger.new(STDOUT)
+      
+      @config = config.keys_matching(/^scripts\.(.*)$/)
+      @stages = config.keys_matching(/^stage\.(.*)$/) { |c,name| Stage.new(self, name, c) }
+    end
 
-				BackupPlanRulebook.new(e).rules
+    attr :logger, true
+    attr :config
 
-				@stages.each do |k,s|
-					StageRulebook.new(e, s).rules
-				end
+    def run_backup
+      Ruleby.engine :engine do |e|
+        @engine = e
 
-				puts " Processing Rules ".center(80, "=")
+        puts " Loading Rules ".center(80, "=")
 
-				e.assert Facts::Initial.new
+        BackupPlanRulebook.new(e).rules
 
-				e.match
-				@engine = nil
-			end
+        @stages.each do |k,s|
+          StageRulebook.new(e, s).rules
+        end
 
-			puts " Finished ".center(80, "=")
-		end
+        puts " Processing Rules ".center(80, "=")
 
-		attr :engine
-		attr :config
-		attr :stages
+        e.assert Facts::Initial.new
 
-		def self.load_from_file(path)
-			new(YAML::load(File.read(path)))
-		end
-	end
+        e.match
+        @engine = nil
+      end
+
+      puts " Finished ".center(80, "=")
+    end
+
+    attr :engine
+    attr :config
+    attr :stages
+
+    def self.load_from_file(path)
+      new(YAML::load(File.read(path)))
+    end
+  end
 
 end

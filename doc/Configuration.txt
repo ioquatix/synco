@@ -1,0 +1,10 @@
+
+Backup Scripts list a set of servers and directories.
+
+A server is a logical unit where files are available or stored.
+
+Directories are specific places within servers.
+
+A backup will stop at any point if there is a failure. This indicates that the entire backup failed.
+
+

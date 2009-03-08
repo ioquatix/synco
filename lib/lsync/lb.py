@@ -40,9 +40,6 @@ Options:
     --filelist <- or file> Specify filelist. Files relative to srcdir.
     --lock            Ensure only one backup to a given dest will run at a time
     --verbose         Show what is happening
-    --ssh-i <file>    Select id file to use for authentication (ssh -i)
-    --ssh-C           Use ssh compression (ssh -C)
-    --ssh-p <port>    ssh port on remote host (ssh -p)
 
 Comments:
 
@@ -121,6 +118,10 @@ created underneath the pictures-transfer directory, although it is not necessary
 since only the catalog is being updated (however it would be a speedup).
  
 History:
+
+v 0.82 20/Oct/2008 Samuel Williams http://www.oriontransfer.co.nz/
+  - Removed --ssh-(x) options in favor of rsync style -e '...' style,
+    this makes the command compatible with rsync style syntax.
 
 v 0.81 6/Sep/2008 Samuel Williams http://www.oriontransfer.co.nz/
   - Added mode-line and #! line
@@ -734,16 +735,12 @@ def start_server(src, dst, is_source):
 	addr = src
 
     # Add ssh and args if remote
-
     if addr['remote']:
 	ssh_args = '%s %s' % (addr['remote'], dump_arg(cmd1))
-	if have_option('--ssh-p'):
-	    ssh_args = '-p %s %s' % (get_option_value('--ssh-p'), ssh_args)
-	if have_option('--ssh-i'):
-	    ssh_args = '-i %s %s' % (get_option_value('--ssh-i'), ssh_args)
-	if have_option('--ssh-C'):
-	    ssh_args = '-C %s' % ssh_args
-	cmd2 = 'ssh %s' % ssh_args
+	if have_option('-e'):
+                cmd2 = '%s %s' % (get_option_value('-e'), ssh_args)
+        else:
+                cmd2 = 'ssh %s' % ssh_args
     else:
 	cmd2 = cmd1
 
@@ -1185,7 +1182,7 @@ def get_option_value(option):
     return None
 
 def error(string):
-    sys.stderr.write(string)
+    sys.stderr.write("*** " + string + "\n")
     sys.exit(1)
 
 class LockFile:
@@ -1238,6 +1235,9 @@ if __name__ == '__main__':
 
     src = parse_address(sys.argv[-2:-1][0])
     dst = parse_address(sys.argv[-1:][0])
+
+    if have_option('--ssh-i') or have_option('--ssh-C') or have_option('--ssh-p'):
+        error("--ssh-x style options have been deprecated in favor of -e (rsync style). Please change your command.")
 
     # Is this the server?
 

@@ -30,8 +30,8 @@ class BackupTest < Test::Unit::TestCase
   end
   
   def teardown
-    #FileUtils.rm_rf @src
-    #FileUtils.rm_rf @dst
+    FileUtils.rm_rf @src
+    FileUtils.rm_rf @dst
   end
   
   def test_script

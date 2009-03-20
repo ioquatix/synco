@@ -25,15 +25,13 @@ ARGV.options do |o|
   o.on("-l log_path", String, "Set the directory for backup logs") { |log_path| OPTIONS[:LogPath] = log_path }
 
   o.on_tail("--copy", "Display copyright information") {
-    puts "#{script_name} v#{LSync::VERSION::STRING}. Copyright (c) 2008 Samuel Williams. Released under the GPLv2."
+    puts "#{script_name} v#{LSync::VERSION::STRING}. Copyright (c) 2008 Samuel Williams. Released under the GPLv3."
     puts "See http://www.oriontransfer.co.nz/ for more information."
 
     exit
   }
 
   o.on_tail("-h", "--help", "Show this help message.") { puts o; exit }
-
-  o
 end.parse!
 
 # ============================== Main Scripts / Plans ==============================

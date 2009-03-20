@@ -1,0 +1,23 @@
+
+Dir.chdir("../") do
+  require 'lib/lsync/version'
+
+  Gem::Specification.new do |s|
+    s.name = "LSync"
+    s.version = LSync::VERSION::STRING
+    s.author = "Samuel Williams"
+    s.email = "samuel.williams@oriontransfer.co.nz"
+    s.homepage = "http://wiki.oriontransfer.org/?lsync"
+    s.platform = Gem::Platform::RUBY
+    s.summary = "LSync is a tool for scripted synchronization and backups.
+    s.files = FileList["{bin,lib}/**/*"].to_a
+    s.require_path = "lib"
+    s.executables << 'lsync'
+    s.has_rdoc = false
+    #  s.extra_rdoc_files = ["README"]
+
+    s.add_dependency("termios")
+    s.add_dependency("net-ssh")
+    s.add_dependency("ruleby")
+  end
+end

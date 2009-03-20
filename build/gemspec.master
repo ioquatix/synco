@@ -9,7 +9,7 @@ Dir.chdir("../") do
     s.email = "samuel.williams@oriontransfer.co.nz"
     s.homepage = "http://wiki.oriontransfer.org/?lsync"
     s.platform = Gem::Platform::RUBY
-    s.summary = "LSync is a tool for scripted synchronization and backups.
+    s.summary = "LSync is a tool for scripted synchronization and backups."
     s.files = FileList["{bin,lib}/**/*"].to_a
     s.require_path = "lib"
     s.executables << 'lsync'

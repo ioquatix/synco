@@ -150,7 +150,8 @@ module LSync
       end
       
       def run_handler(src, dst, options)
-        options += " --verbose"
+        # Verbose mode for debugging..
+        # options += " --verbose"
         run_command("python #{LinkBackup.lb_bin.dump} #{options} #{src.dump} #{dst.dump}")
       end
     end

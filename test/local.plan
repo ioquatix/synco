@@ -1,0 +1,62 @@
+
+scripts.root: /var/backup/scripts/
+
+scripts.override:
+  log-directory: /var/backup/logs/
+
+# Network Connectivity Tests
+stage.network.connectivity.darian:
+  when: Initial
+  priority: 100
+  scripts:
+    - ping-host oriontransfer.mine.nu
+
+stage.network.connectivity.connect:
+  when: Initial
+  priority: 100
+  scripts:
+    - ping-host connect.homeunix.com
+
+stage.network.connectivity.georgia:
+  when: Initial
+  priority: 100
+  scripts:
+    - ping-host georgia.textdrive.com
+
+stage.network.connectivity.harwood:
+  when: Initial
+  priority: 100
+  scripts:
+    - ping-host harwood.textdrive.com
+
+stage.network.connectivity.humboldt:
+  when: Initial
+  priority: 100
+  scripts:
+    - ping-host humboldt.textdrive.com
+
+# Backup Stages
+stage.1:
+  when: Initial
+  scripts:
+    - lsync koyoko.conf
+    - lsync harwood.conf
+    - lsync georgia.conf
+
+stage.2:
+  when: StageSucceeded where @name == "stage.network.connectivity.oriontransfer.mine.nu"
+  scripts:
+    - lsync
+
+stage.2:
+  when: StageSucceeded where @name == "stage.1"
+  scripts:
+    - lsync archive-local-backups.conf
+
+stage.offsite:
+  when: 
+    - StageSucceeded where @name == "stage.1"
+    - StageSucceeded where @name == "stage.network.connectivity"
+  scripts:
+    - lsync henri.conf
+

@@ -24,12 +24,12 @@ ARGV.options do |o|
   o.on("-p plan", String, "Run the specified backup plan") { |plan| OPTIONS[:Plan] = plan }
   o.on("-l log_path", String, "Set the directory for backup logs") { |log_path| OPTIONS[:LogPath] = log_path }
 
-  o.on_tail("--copy", "Display copyright information") {
-    puts "#{script_name} v#{LSync::VERSION::STRING}. Copyright (c) 2008 Samuel Williams. Released under the GPLv3."
+  o.on_tail("--copy", "Display copyright information") do
+    puts "#{script_name} v#{LSync::VERSION::STRING}. Copyright (c) 2008-2009 Samuel Williams. Released under the GPLv3."
     puts "See http://www.oriontransfer.co.nz/ for more information."
 
     exit
-  }
+  end
 
   o.on_tail("-h", "--help", "Show this help message.") { puts o; exit }
 end.parse!

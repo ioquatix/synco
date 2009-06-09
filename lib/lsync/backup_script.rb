@@ -3,97 +3,10 @@
 
 require 'lsync/action'
 require 'lsync/method'
+require 'lsync/server'
+require 'lsync/directory'
 
 module LSync
-
-  module RunActions
-    def run_actions(actions) # throws BackupActionError
-      actions = @actions[actions] if actions.class == Symbol
-      actions.each do |a|
-        begin
-          result = a.run_on_server(self)
-          # raise "Action failed" if result == false
-        rescue
-          raise BackupActionError.new(self, a, $!)
-        end
-      end
-    end
-  end
-
-  class Directory
-    def initialize(config)
-      @path = config["path"]
-      @user = config["user"]
-    end
-
-    def to_s
-      @path
-    end
-
-    attr :user
-
-    include RunActions
-  end
-
-  class Server
-    def initialize(config)
-      @host = config["host"]
-      @root = config["root"]
-
-      @actions = {
-        :before => (config["before"] || []).collect { |c| Action.new(c) },
-        :after => (config["after"] || []).collect { |c| Action.new(c) }
-      }
-
-      @ssh_options = config["ssh-options"] || {}
-
-      @enabled = true
-    end
-
-    def full_path(directory)
-      # Directories need to have trailing slashes
-      return File.expand_path(directory.to_s, @root || "/") + "/"
-    end
-
-    def host_location
-      @user ? "#{@user}@#{@host}" : @host
-    end
-
-    def connection_string(directory)
-      if is_local?
-        return full_path(directory)
-      else
-        return host_location + ":" + full_path(directory).dump
-      end
-    end
-
-    def is_local?
-      return true if @host == "localhost"
-
-      hostname = Socket.gethostname
-
-      begin
-        hostname = Socket.gethostbyname(hostname)[0]
-      rescue SocketError
-        puts $!
-      end
-
-      return @host == hostname
-    end
-
-    def to_s
-      "#{host_location}:#{@root}"
-    end
-
-    def should_run?
-      return @enabled
-    end
-
-    attr :host
-    attr :ssh_options
-
-    include RunActions
-  end
 
   class BackupScript
     private
@@ -174,7 +87,11 @@ module LSync
       end
 
       # Run server pre-scripts.. if these fail then we abort the whole backup
-      current.run_actions(:before)
+      begin
+        @master.run_actions(:before, logger)
+      rescue AbortBackupException
+        next
+      end
 
       logger.info "Running backups for server #{current}..."
 
@@ -189,23 +106,24 @@ module LSync
         end
 
         # Run pre-scripts for a particular server
-        s.run_actions(:before)
+        begin
+          s.run_actions(:before, logger)
+        rescue AbortBackupException
+          next
+        end
 
         @directories.each do |name, d|
           logger.info "\t" + ("Processing " + d.to_s).rjust(20) + " : #{s}"
-          #d.run_actions(:before)
-          
+
           @method.logger = logger
           @method.run(@master, s, d)
-
-          #d.run_actions(:after)
         end
 
         # Run post-scripts for a particular server
-        s.run_actions(:after)
+        s.run_actions(:after, logger)
       end
 
-      current.run_actions(:after)
+      @master.run_actions(:after, logger)
     end
 
     def self.load_from_file(path)

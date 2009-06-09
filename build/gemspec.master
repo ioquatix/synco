@@ -19,5 +19,7 @@ Dir.chdir("../") do
     s.add_dependency("termios")
     s.add_dependency("net-ssh")
     s.add_dependency("ruleby")
+    
+    s.add_dependency("rexec")
   end
 end

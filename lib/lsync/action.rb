@@ -1,99 +1,93 @@
 
-require 'net/ssh'
-require 'lsync/to_cmd'
-
-class Net::SSH::Connection::Session
-  def verbose_exec!(command, &block)
-    block ||= Proc.new do |ch, stream, data|
-      if stream == :stderr
-        $stderr.write(data) 
-      else
-        ch[:result] ||= ""
-        ch[:result] << data
-      end
-    end
-
-    puts "SSH: #{command}"
-    channel = exec(command, &block)
-    channel.wait
-
-    return channel[:result]
-  end
-end
+require 'pathname'
+require 'lsync/run'
+require 'lsync/backup_error'
 
 module LSync
+  
+  class AbortBackupException < Exception
+    
+  end
   
   class Action
     def initialize(function)
       @function = function
       
-      if @function.match(/\%([a-z]+)/)
+      if @function.match(/^\%([a-z]+)(\s+.*)?$/)
         @script_name = $1
+        @arguments = $2
       else
         @script_name = nil
       end
     end
     
-    def run_on_server(server)
-      puts "Running #{@function} on #{server}"
+    def to_s
+      @function
+    end
+    
+    def run_on_server(server, logger)
+      logger.info "Running #{@function} on #{server}"
       
-      return
-      
-      if server.is_localhost?
-        run_locally(server.user)
+      if server.is_local?
+        run_locally(server, logger)
       else
-        run_remotely(server.host, server.user, server.ssh_options)
+        run_remotely(server, logger)
       end
     end
     
   private
-    def run_locally(user)
+    def run_locally(server, logger)
       command = nil
       
       if @script_name
         uname = `uname`.chomp.downcase
         
-        local_path = Action.script_path(uname, script_name)
-        command = local_path.to_cmd + arguments
+        local_path = Action.script_path(uname, @script_name)
+        command = local_path.to_cmd + @arguments
       else
         command = @function
       end
       
-      IO.popen(command) do |io|
-        result = io.read
+      ret = nil
+      Dir.chdir(server.root_path) do
+        ret = LSync.run_command(command, logger)
       end
       
-      return result
+      case(ret)
+      when 0
+        return
+      when 1
+        raise AbortBackupException
+      else
+        raise BackupActionError
+      end
     end
     
-    def run_remotely(host, user, options = {})
-      Net::SSH.start(host, user, options) do |ssh|
+    def run_remotely(server, logger)
+      remote_shell.connect do |shell|
         command = nil
         
         if @script_name
-          uname = ssh.verbose_exec!("uname").chomp.downcase
+          uname = shell.verbose_exec!("uname").chomp.downcase
 
           local_path = Action.script_path(uname, script_name)
           command = local_path.to_cmd + arguments
         else
           command = @function
         end
-        
-        # Create a temporary location for the script
-        remote_path = ssh.verbose_exec!("mktemp -t #{File.basename(local_path)}.XXXX").chomp
-        
-        ssh.sftp.upload(local_path, remote_path)
-        ssh.verbose_exec!("chmod +x #{remote_path}")
-        
-        parts = command
-        result = ssh.verbose_exec!(parts.to_cmd)
+
+        return shell.execute_script_remotely(parts.to_cmd)
       end
-      
-      return result
     end
     
     def self.script_path(platform, name)
-      File.join(File.dirname(__FILE__), platform, name)
+      exact_script_path(platform, name) || exact_script_path("generic", name)
+    end
+    
+    private
+    def self.exact_script_path(platform, name)
+      path = (Pathname.new(__FILE__).dirname + "actions" + platform + name).expand_path
+      path.exist? ? path : nil
     end
   end
 

@@ -1,0 +1,217 @@
+#!/usr/bin/env ruby
+
+# This script takes a specified directory, and removes any directories that
+# don't match the supplied policy. Thanks to Scott Lu and his "snapfilter"
+# command which made me realise how complicated my first attempt at doing this
+# was.
+
+require 'pathname'
+require 'fileutils'
+require 'optparse'
+
+require 'set'
+require 'time'
+# Required for strptime
+require 'date'
+
+class Rotation
+  def initialize(path, time)
+    @path = path
+    @time = time
+  end
+  
+  attr :time
+  attr :path
+  
+  # Sort in reverse order by default
+  def <=> other
+    return other.time <=> @time
+  end
+end
+
+class Period
+  def initialize(count)
+    @count = count
+  end
+  
+  def filter(values)
+    slots = {}
+    
+    values.each do |value|
+      time = value.time
+      
+      k = key(time)
+      
+      # We want to keep the newest backup if possible.
+      next if slots.key?(k) and value.time < slots[k].time
+      
+      slots[k] = value
+    end
+    
+    sorted_values = slots.values.sort
+    return sorted_values[0...@count]
+  end
+  
+  def key(t)
+    raise ArgumentError
+  end
+  
+  def mktime(year, month=1, day=1, hour=0, minute=0, second=0)
+    return Time.gm(year, month, day, hour, minute, second)
+  end
+  
+  attr :count
+end
+
+class Hourly < Period
+  def key(t)
+    mktime(t.year, t.month, t.day, t.hour)
+  end
+end
+
+class Daily < Period
+  def key(t)
+    mktime(t.year, t.month, t.day)
+  end
+end
+
+class Weekly < Period
+  def key(t)
+    mktime(t.year, t.month, t.day - t.wday)
+  end
+end
+
+class Monthly < Period
+  def key(t)
+    mktime(t.year, t.month)
+  end
+end
+
+class Quarterly < Period
+  def key(t)
+    mktime(t.year, (t.month - 1) / 3 * 3 + 1)
+  end
+end
+
+class Yearly < Period
+  def key(t)
+    mktime(t.year)
+  end
+end
+
+class Policy
+  def initialize
+    @periods = []
+  end
+  
+  def <<(period)
+    @periods << period
+  end
+  
+  def filter(values)
+    filtered_values = Set.new
+    @periods.each do |period|
+      filtered_values += period.filter(values)
+    end
+    
+    return filtered_values.to_a, (Set.new(values) - filtered_values).to_a
+  end
+  
+  attr :periods
+end
+
+OPTIONS = {
+  :Format => "%Y.%m.%d-%H.%M.%S",
+  :Destination => "./*",
+  :Policy => Policy.new
+}
+
+ARGV.options do |o|
+  script_name = File.basename($0)
+
+  o.set_summary_indent('  ')
+  o.banner = "Usage: #{script_name} [options] [directory]"
+  o.define_head "This script is used to prune old backups."
+
+  o.separator ""
+  o.separator "Help and Copyright information"
+
+  o.on("-f format", String, "Set the format of the rotated directory names. See Time$strftime") do |format| 
+    OPTIONS[:Format] = format
+  end
+
+  o.on("-d destination", String, "Set the directory that contains backups to prune.") do |destination|
+    OPTIONS[:Destination] = destination
+  end
+
+  o.separator ""
+
+  o.on("--default-policy", "Sets up a typical policy retaining a reasonable number of rotations for up to 20 years.") do
+    OPTIONS[:Policy] << Hourly.new(24)
+    OPTIONS[:Policy] << Daily.new(7*4)
+    OPTIONS[:Policy] << Weekly.new(52)
+    OPTIONS[:Policy] << Monthly.new(12*3)
+    OPTIONS[:Policy] << Quarterly.new(4*10)
+    OPTIONS[:Policy] << Yearly.new(20)
+  end
+
+  o.separator ""
+  
+  o.on("--hourly count", Integer, "Set the number of hourly backups to keep.") do |count|
+    OPTIONS[:Policy] << Hourly.new(count)
+  end
+  
+  o.on("--daily count", Integer, "Set the number of daily backups to keep.") do |count|
+    OPTIONS[:Policy] << Daily.new(count)
+  end
+  
+  o.on("--weekly count", Integer, "Set the number of weekly backups to keep.") do |count|
+    OPTIONS[:Policy] << Weekly.new(count)
+  end
+  
+  o.on("--monthly count", Integer, "Set the number of monthly backups to keep.") do |count|
+    OPTIONS[:Policy] << Monthly.new(count)
+  end
+
+  o.on("--quaterly count", Integer, "Set the number of monthly backups to keep.") do |count|
+    OPTIONS[:Policy] << Quarterly.new(count)
+  end
+
+  o.on("--yearly count", Integer, "Set the number of monthly backups to keep.") do |count|
+    OPTIONS[:Policy] << Yearly.new(count)
+  end
+
+  o.separator ""
+
+  o.on_tail("--copy", "Display copyright information") do
+    puts "#{script_name}. Copyright (c) 2008-2009 Samuel Williams. Released under the GPLv3."
+    puts "See http://www.oriontransfer.co.nz/ for more information."
+
+    exit
+  end
+
+  o.on_tail("-h", "--help", "Show this help message.") do
+    puts o
+    exit
+  end
+end.parse!
+
+backups = []
+
+Dir[OPTIONS[:Destination]].each do |path|
+  date_string = File.basename(path)
+  
+  begin
+    backups << Rotation.new(path, DateTime.strptime(date_string, OPTIONS[:Format]))
+  rescue ArgumentError
+    puts "Skipping #{path}, error parsing #{date_string}: #{$!}"
+  end
+end
+
+keep, erase = OPTIONS[:Policy].filter(backups)
+
+erase.sort.each do |backup|
+  puts "Erasing #{backup.path}..."
+  $stdout.flush
+  FileUtils.rm_rf(backup.path)
+end

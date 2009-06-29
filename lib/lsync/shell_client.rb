@@ -2,18 +2,50 @@
 require 'logger'
 require 'fileutils'
 
-$logger = Logger.new "remote-client.log"
+require "open3"
 
 LSYNC_TMP_DIRECTORY = "/tmp/lsync-#{Process.pid}"
 FileUtils.mkdir_p(LSYNC_TMP_DIRECTORY)
 FileUtils.chmod 0700, LSYNC_TMP_DIRECTORY
+$logger = Logger.new "/tmp/remote-client.log"
 
 def script_path(named)
-  File.join(LSYNC_TMP_DIRECTORY, "#{name}")
+  File.join(LSYNC_TMP_DIRECTORY, "#{named}")
 end
 
 module RemoteMethods
-  def self.create_script(name, code)
+  def self.run_command(cmd)
+    $connection.send([:info, "Running #{cmd}..."])
+    
+    cin, cout, cerr = Open3.popen3(cmd)
+    cin.close
+    
+    pipes = [cout, cerr]
+    
+    while pipes.size > 0
+      ready = IO.select(pipes)
+      $logger.info(ready.inspect)
+      
+      ready[0].each do |pipe|
+        # Delete the pipe when it has become closed
+        if pipe.closed? || pipe.eof?
+          pipes.delete(pipe)
+          next
+        end
+        
+        line = pipe.readline.chomp
+        mode = (pipe == cout ? :info : :error)
+        
+        $logger.send(mode, line)
+        $connection.send([mode, line])
+      end
+    end
+    
+    $logger.info "Done running command."
+    $connection.send(:done)
+  end
+  
+  def self.run_script(name, code, arguments)
     path = script_path(name)
     
     File.open(path, "w") do |f|
@@ -22,21 +54,25 @@ module RemoteMethods
     
     FileUtils.chmod 0755, path
     
-    $scripts[name] = path
+    run_command(path + " " + arguments)
   end
   
-  def self.run_script(name, *args)
-    system($scripts[name], *args)
+  def self.mkdir_p(path)
+    FileUtils.mkdir_p(path)
+  end
+  
+  def self.set_working_dir(path)
+    Dir.chdir(path)
   end
 end
 
 begin
+  $connection.send(:ready)
+  
   $connection.run do |message|
     method = message.shift
     $logger.info("Calling #{method}...")
     result = RemoteMethods.send(method, *message)
-  
-    conn.send(result)
   end
 rescue
   $logger.error("Exception caught: #{$!}")

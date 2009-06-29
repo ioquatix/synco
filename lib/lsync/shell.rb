@@ -1,8 +1,8 @@
 
+require 'rexec'
 require 'pathname'
 
 module LSync
-  
   CLIENT_CODE = (Pathname.new(__FILE__).dirname + "shell_client.rb").read
   
   class Shell
@@ -14,10 +14,10 @@ module LSync
       elsif config.kind_of? Hash
         @command = config["command"]
         @options = config.dup
-      else
-        @command = "ssh $HOST $RUBY"
-        @options = {}
       end
+      
+      @command ||= "ssh $OPTIONS $HOST"
+      @options ||= {}
       
       if @command.match(/([^\s]+)/)
         @name = $1
@@ -43,7 +43,8 @@ module LSync
           when :compression
             args += ['-C']
           when :user
-            args += ['-o', "User #{v.to_s}".dump]
+            args += ['-l', v.to_s.dump]
+            # args += ['-o', "User #{v.to_s}".dump]
           end
         end
       end
@@ -55,21 +56,39 @@ module LSync
       @options["ruby"] || "ruby"
     end
     
-    def full_command(server, include_ruby = false)
-      remote_path = @command + " " + command_options
-      remote_path.gsub!("$HOST", server.host)
-      remote_path.gsub!("$ROOT", server.root_path)
+    def full_command(server = nil)
+      cmd = @command.dup
       
-      return remote_path
+      cmd.gsub!("$OPTIONS", command_options)
+
+      if server
+        cmd.gsub!("$HOST", server.host)
+        cmd.gsub!("$ROOT", server.root_path)
+      end
+      
+      return cmd
     end
     
+    protected
     # Return a connection object representing a connection to the given server.
-    def connect(server)
+    def open_connection(server)
       if server.is_local?
+        $stderr.puts "Opening connection to #{ruby_path.dump}"
         return RExec::start_server(CLIENT_CODE, ruby_path, :passthrough => [])
       else
-        return RExec::start_server(CLIENT_CODE, full_command(server, true), :passthrough => [], :ruby => ruby_path)
+        $stderr.puts "Opening connection to #{full_command(server).dump}"
+        return RExec::start_server(CLIENT_CODE, full_command(server), :passthrough => [], :ruby => ruby_path)
       end
+    end
+    
+    public
+    def connect(server)
+      connection, pid = open_connection(server)
+      message = connection.receive
+      
+      abort "Remote shell connection was not successful: #{message}" unless message == :ready
+      
+      return connection, pid
     end
     
     attr :command

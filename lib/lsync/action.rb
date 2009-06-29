@@ -64,19 +64,25 @@ module LSync
     end
     
     def run_remotely(server, logger)
-      remote_shell.connect do |shell|
-        command = nil
+      conn = server.connect
+      conn.send([:set_working_dir, server.root_path])
+      
+      if @script_name
+        uname = `uname`.chomp.downcase
+
+        local_path = Action.script_path(uname, @script_name)
         
-        if @script_name
-          uname = shell.verbose_exec!("uname").chomp.downcase
-
-          local_path = Action.script_path(uname, script_name)
-          command = local_path.to_cmd + arguments
-        else
-          command = @function
-        end
-
-        return shell.execute_script_remotely(parts.to_cmd)
+        logger.info("Sending run_script #{@script_name}...")
+        conn.send([:run_script, @script_name, Pathname.new(local_path).read, @arguments])
+      else
+        logger.info("Sending run_command #{@function}...")
+        conn.send([:run_command, @function])
+      end
+      
+      conn.run do |message|
+        break if message == :done
+        
+        logger.send(*message)
       end
     end
     

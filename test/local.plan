@@ -55,8 +55,9 @@ stage.2:
 
 stage.offsite:
   when: 
-    - StageSucceeded where @name == "stage.1"
-    - StageSucceeded where @name == "stage.network.connectivity"
+    - or
+      - StageSucceeded where @name == "stage.1"
+      - StageSucceeded where @name == "stage.network.connectivity"
   scripts:
     - lsync henri.conf
 

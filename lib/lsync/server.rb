@@ -23,7 +23,7 @@ module LSync
 
     def full_path(directory = "./")
       # Directories need to have trailing slashes
-      return File.expand_path(directory.to_s, backup_path) + "/"
+      return File.expand_path(directory.to_s, root_path) + "/"
     end
 
     def connection_string(directory)
@@ -58,7 +58,6 @@ module LSync
 
     def connect
       unless @connection
-        puts "Opening shell: #{@shell.full_path(self)}..."
         @connection, @pid = @shell.connect(self)
       end
       
@@ -72,18 +71,6 @@ module LSync
     def root_path
       if @root == nil
         return "/"
-      elsif @root.kind_of? Array
-        return @root[0]
-      else
-        return @root.to_s
-      end
-    end
-    
-    def backup_path
-      if @root == nil
-        return "/"
-      elsif @root.kind_of? Array
-        return File.join(@root)
       else
         return @root.to_s
       end

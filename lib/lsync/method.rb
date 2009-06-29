@@ -1,5 +1,6 @@
 
 require 'fileutils'
+require 'pathname'
 require 'lsync/run'
 
 module LSync
@@ -42,17 +43,25 @@ module LSync
     module DirectionalMethodHelper
       protected
       def connect_options_for_server (local_server, remote_server)
-        ['-e', remote_server.shell.full_command(remote_server).dump].join(" ")
+        # RSync -e option simply appends the hostname. There is no way to control this behaviour.
+        cmd = remote_server.shell.full_command(remote_server)
+        
+        if cmd.match(/ #{remote_server.host}$/)
+          cmd.gsub!(/ #{remote_server.host}$/, "")
+        else
+          abort "RSync shell requires hostname at end of command! #{cmd.dump}"
+        end
+        
+        ['-e', cmd.dump].join(" ")
       end
       
       public
       def initialize(direction)
         @direction = direction
       end
-    
+      
       def run(master_server, target_server, directory, options, logger)
         options ||= ""
-        options += " " + directory.method
         
         local_server = nil
         remote_server = nil
@@ -72,7 +81,10 @@ module LSync
         end
         
         options += " " + connect_options_for_server(local_server, remote_server)
-        FileUtils.mkdir_p(local_server.full_path(directory))
+        
+        # Create the destination backup directory
+        @connection = target_server.connect
+        @connection.send([:mkdir_p, target_server.full_path(directory)])
         
         @logger = logger
         
@@ -108,6 +120,55 @@ module LSync
   
     Method.register("rsync-pull", RSync.new(:pull))
     Method.register("rsync-push", RSync.new(:push))
+    
+    class RSyncSnapshot < RSync
+      def run(master_server, target_server, directory, options, logger)
+        options ||= ""
+        link_dest = Pathname.new("../" * (directory.path.components.size + 1)) + "latest" + directory.path
+        options += " --archive --link-dest #{link_dest.to_s.dump}"
+        
+        inprogress_path = ".inprogress"
+        dst_directory = File.join(inprogress_path, directory.to_s)
+        
+        local_server = nil
+        remote_server = nil
+        
+        if @direction == :push
+          local_server = master_server
+          remote_server = target_server
+          
+          dst = remote_server.connection_string(dst_directory)
+          src = local_server.full_path(directory)
+        else
+          local_server = target_server
+          remote_server = master_server
+          
+          dst = local_server.full_path(dst_directory)
+          src = remote_server.connection_string(directory)
+        end
+        
+        options += " " + connect_options_for_server(local_server, remote_server)
+        
+        # Create the destination backup directory
+        @connection = target_server.connect
+        @connection.send([:mkdir_p, target_server.full_path(dst_directory)])
+        
+        @logger = logger
+        
+        Dir.chdir(local_server.root_path) do
+          if run_handler(src, dst, options) == false
+            raise BackupMethodError.new("Backup from #{src.dump} to #{dst.dump} failed.", :method => self)
+          end
+        end
+        
+        # Rotate the backup
+        rotate = Action.new("%rotate #{inprogress_path.dump}")
+        rotate.run_on_server(target_server, logger)
+      end
+    end
+    
+    Method.register("rsync-snapshot-pull", RSyncSnapshot.new(:pull))
+    Method.register("rsync-snapshot-push", RSyncSnapshot.new(:push))
   
     class LinkBackup
       include DirectionalMethodHelper
@@ -117,8 +178,6 @@ module LSync
       end
       
       def run_handler(src, dst, options)
-        
-        
         # Verbose mode for debugging..
         # options += " --verbose"
         run_command("python #{LinkBackup.lb_bin.dump} #{options} #{src.dump} #{dst.dump}")

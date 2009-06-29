@@ -160,10 +160,6 @@ module LSync
             raise BackupMethodError.new("Backup from #{src.dump} to #{dst.dump} failed.", :method => self)
           end
         end
-        
-        # Rotate the backup
-        rotate = Action.new("%rotate #{inprogress_path.dump}")
-        rotate.run_on_server(target_server, logger)
       end
     end
     

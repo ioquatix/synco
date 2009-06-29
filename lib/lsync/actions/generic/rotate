@@ -56,7 +56,7 @@ if OPTIONS[:UseUTC]
   time = time.utc
 end
 
-dir = Pathname.new(ARGV[0])
+dir = Pathname.new(ARGV[0] || ".inprogress")
 rotation_dir = Pathname.new(OPTIONS[:Destination] ? OPTIONS[:Destination] : dir.dirname)
 rotated_name = time.strftime(OPTIONS[:Format])
 rotated_dir = rotation_dir + rotated_name

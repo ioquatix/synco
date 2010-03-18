@@ -76,15 +76,20 @@ module LSync
         $stderr.puts "Opening connection to #{ruby_path.dump}"
         return RExec::start_server(CLIENT_CODE, ruby_path, :passthrough => [])
       else
-        $stderr.puts "Opening connection to #{full_command(server).dump}"
-        return RExec::start_server(CLIENT_CODE, full_command(server), :passthrough => [], :ruby => ruby_path)
+        command = full_command(server) + " " + ruby_path.dump
+        $stderr.puts "Opening connection to #{command}"
+        return RExec::start_server(CLIENT_CODE, command, :passthrough => [])
       end
     end
     
     public
     def connect(server)
-      connection, pid = open_connection(server)
-      message = connection.receive
+      begin
+        connection, pid = open_connection(server)
+        message = connection.receive_object
+      ensure
+        connection.dump_errors
+      end
       
       abort "Remote shell connection was not successful: #{message}" unless message == :ready
       

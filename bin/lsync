@@ -143,7 +143,7 @@ rescue Interrupt
   dump_exception_backtrace($!)
   exit(240)
 rescue
-  $logger.error "Unknown exception thrown: #{$!.to_s}. Dumping backtrace:"
+  $logger.error "Unknown exception #{$!.class.name} thrown: #{$!.to_s}. Dumping backtrace:"
   dump_exception_backtrace($!)
   exit(250)
 ensure

@@ -9,13 +9,15 @@ FileUtils.mkdir_p(LSYNC_TMP_DIRECTORY)
 FileUtils.chmod 0700, LSYNC_TMP_DIRECTORY
 $logger = Logger.new "/tmp/remote-client.log"
 
+$logger.info "Starting remote shell @ #{Time.now.to_s}"
+
 def script_path(named)
   File.join(LSYNC_TMP_DIRECTORY, "#{named}")
 end
 
 module RemoteMethods
   def self.run_command(cmd)
-    $connection.send([:info, "Running #{cmd}..."])
+    $connection.send_object([:info, "Running #{cmd}..."])
     
     cin, cout, cerr = Open3.popen3(cmd)
     cin.close
@@ -37,12 +39,12 @@ module RemoteMethods
         mode = (pipe == cout ? :info : :error)
         
         $logger.send(mode, line)
-        $connection.send([mode, line])
+        $connection.send_object([mode, line])
       end
     end
     
     $logger.info "Done running command."
-    $connection.send(:done)
+    $connection.send_object(:done)
   end
   
   def self.run_script(name, code, arguments)
@@ -67,7 +69,7 @@ module RemoteMethods
 end
 
 begin
-  $connection.send(:ready)
+  $connection.send_object(:ready)
   
   $connection.run do |message|
     method = message.shift

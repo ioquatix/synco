@@ -88,9 +88,10 @@ module LSync
 
       # Run server pre-scripts.. if these fail then we abort the whole backup
       begin
+        @method.run_actions(:before, logger)
         @master.run_actions(:before, logger)
       rescue AbortBackupException
-        next
+        return
       end
 
       logger.info "Running backups for server #{current}..."
@@ -123,6 +124,7 @@ module LSync
         s.run_actions(:after, logger)
       end
 
+      @method.run_actions(:after, logger)
       @master.run_actions(:after, logger)
     end
 

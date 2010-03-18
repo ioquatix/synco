@@ -37,6 +37,9 @@ module LSync
     def should_run?(master_server, current_server, target_server)
       @method.should_run?(master_server, current_server, target_server)
     end
+    
+    def run_actions(actions, logger)
+    end
   end
   
   module Methods
@@ -84,7 +87,7 @@ module LSync
         
         # Create the destination backup directory
         @connection = target_server.connect
-        @connection.send([:mkdir_p, target_server.full_path(directory)])
+        @connection.send_object([:mkdir_p, target_server.full_path(directory)])
         
         @logger = logger
         
@@ -124,7 +127,7 @@ module LSync
     class RSyncSnapshot < RSync
       def run(master_server, target_server, directory, options, logger)
         options ||= ""
-        link_dest = Pathname.new("../" * (directory.path.components.size + 1)) + "latest" + directory.path
+        link_dest = Pathname.new("../" * (directory.depth + 1)) + "latest" + directory.path
         options += " --archive --link-dest #{link_dest.to_s.dump}"
         
         inprogress_path = ".inprogress"
@@ -151,7 +154,7 @@ module LSync
         
         # Create the destination backup directory
         @connection = target_server.connect
-        @connection.send([:mkdir_p, target_server.full_path(dst_directory)])
+        @connection.send_object([:mkdir_p, target_server.full_path(dst_directory)])
         
         @logger = logger
         

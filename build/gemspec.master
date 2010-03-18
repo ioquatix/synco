@@ -3,11 +3,11 @@ Dir.chdir("../") do
   require 'lib/lsync/version'
 
   Gem::Specification.new do |s|
-    s.name = "LSync"
+    s.name = "lsync"
     s.version = LSync::VERSION::STRING
     s.author = "Samuel Williams"
     s.email = "samuel.williams@oriontransfer.co.nz"
-    s.homepage = "http://wiki.oriontransfer.org/?lsync"
+    s.homepage = "http://www.oriontransfer.co.nz/software/lsync"
     s.platform = Gem::Platform::RUBY
     s.summary = "LSync is a tool for scripted synchronization and backups."
     s.files = FileList["{bin,lib}/**/*"].to_a

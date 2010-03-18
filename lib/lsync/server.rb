@@ -1,8 +1,7 @@
 
 require 'lsync/shell'
 
-module LSync
-  
+module LSync  
   class Server
     def initialize(config)
       @host = config["host"] || "localhost"
@@ -22,8 +21,9 @@ module LSync
     end
 
     def full_path(directory = "./")
-      # Directories need to have trailing slashes
-      return File.expand_path(directory.to_s, root_path) + "/"
+      p = File.expand_path(directory.to_s, root_path)
+      
+      return Pathname.new(p).cleanpath.normalize_trailing_slash.to_s
     end
 
     def connection_string(directory)

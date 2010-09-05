@@ -38,5 +38,19 @@ require 'optparse'
 require 'open-uri'
 
 module LSync
-
+	class InvalidConfigurationPath < StandardError
+	end
+	
+	def self.load_from_file(path)
+		path = Pathname.new(path)
+		
+		case path.extname
+		when ".lsync-script"
+			return Script.load_from_file(path)
+		when ".lsync-plan"
+			return Plan.load_from_file(path)
+		else
+			raise InvalidConfigurationPath.new(path)
+		end
+	end
 end

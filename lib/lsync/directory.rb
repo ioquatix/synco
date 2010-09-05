@@ -13,6 +13,21 @@ class Pathname
       return self.class.new(to_s + "/")
     end
   end
+
+	# Returns the number of path components
+	# We need to work with a cleanpath to get an accurate depth
+	# "", "/" => 0
+	# "bob" => 1
+	# "bob/dole" => 2
+	# "/bob/dole" => 2
+	#
+	def depth
+		bits = cleanpath.to_s.split(SEPARATOR_PAT)
+		
+		bits.delete("")
+		
+		return bits.size
+	end
 end
 
 module LSync
@@ -28,11 +43,6 @@ module LSync
     
     def to_s
       @path.to_s
-    end
-    
-    # Special exception for root path
-    def depth
-      return @path.to_s.scan("/").size - 1
     end
   end
   

@@ -127,7 +127,7 @@ module LSync
     class RSyncSnapshot < RSync
       def run(master_server, target_server, directory, options, logger)
         options ||= ""
-        link_dest = Pathname.new("../" * (directory.depth + 1)) + "latest" + directory.path
+        link_dest = Pathname.new("../" * (directory.path.depth + 1)) + "latest" + directory.path
         options += " --archive --link-dest #{link_dest.to_s.dump}"
         
         inprogress_path = ".inprogress"

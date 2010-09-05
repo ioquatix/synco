@@ -7,7 +7,6 @@ require 'optparse'
 
 OPTIONS = {
   :ConfigFiles => [],
-  :Plan => nil,
   :LogPath => "/var/log/lsync/backup.log"
 }
 
@@ -16,14 +15,10 @@ ARGV.options do |o|
 
   o.set_summary_indent('  ')
   o.banner = "Usage: #{script_name} [options] [directory | config]"
-  o.define_head "This script is used to run lsync scripts and plans. If you specify a directory, files ending in .conf will all be processed."
+  o.define_head "This script is used to run lsync scripts and plans. If you specify a directory, files ending in .lsync-script and .lsync-plan will all be processed."
 
   o.separator ""
   o.separator "Help and Copyright information"
-
-  o.on("-p plan", String, "Run the specified backup plan") do |plan|
-		OPTIONS[:Plan] = plan
-	end
 	
   o.on("-l log_path", String, "Set the directory for backup logs") do |log_path|
 		OPTIONS[:LogPath] = log_path
@@ -95,32 +90,23 @@ def process_config_files
     end
   
     if File.directory? p
-      OPTIONS[:ConfigFiles] += Dir[File.join(p, "*.conf")]
+      OPTIONS[:ConfigFiles] += Dir[File.join(p, "*.{lsync-script,lsync-plan}")]
     else
       OPTIONS[:ConfigFiles] << p
     end
   end
 end
 
-def validate_options
-  if OPTIONS[:Plan] && OPTIONS[:ConfigFiles].size > 0
-    $logger.error "Please specify either a backup plan or a set of backup scripts, but not both in one run."
-    exit(27)
-  end
-end
-
-def run_backups
-  OPTIONS[:ConfigFiles].each do |c|
-    config = LSync::Script.load_from_file(c)
-    config.logger = $logger
-    config.run_backup
-  end
-
-  if OPTIONS[:Plan]
-    config = LSync::Plan.load_from_file(OPTIONS[:Plan])
-    config.logger = $logger
-    config.run_backup
-  end
+def run_backups(config_files)
+	if config_files.size == 0
+		$logger.warn "No configuration files specified!"
+	else
+		config_files.each do |c|
+			config = LSync::load_from_file(c)
+			config.logger = $logger
+			config.run_backup
+		end
+	end
 end
 
 def dump_exception_backtrace ex
@@ -129,17 +115,16 @@ def dump_exception_backtrace ex
   end
 end
 
+# Main Script Execution
 setup_logging
 
 process_config_files
 
-validate_options
-
 $logger.info "  Backup beginning at #{Time.now.to_s}  ".center(96, "=")
 
 begin
-  run_backups
-rescue LSync::BackupError
+  run_backups(OPTIONS[:ConfigFiles])
+rescue LSync::Error
   $logger.error "#{$!.class.name}: #{$!.to_s}. Dumping backtrace:"
   dump_exception_backtrace($!)
   exit(230)

@@ -15,16 +15,16 @@ module LSync
     attr :components
   end
   
-  class ScriptError < BackupError
+  class ScriptError < Error
   end
   
-  class BackupMethodError < BackupError
+  class BackupMethodError < Error
   end
   
-  class ConfigurationError < BackupError
+  class ConfigurationError < Error
   end
   
-  class BackupActionError < BackupError
+  class BackupActionError < Error
     def initialize(server, action, exception)
       super("Backup action failed: #{action} (#{exception.to_s})", :action => action, :exception => exception)
     end

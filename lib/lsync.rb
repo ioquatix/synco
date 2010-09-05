@@ -26,8 +26,10 @@ require 'logger'
 
 require 'lsync/version'
 require 'lsync/extensions'
-require 'lsync/backup_script'
-require 'lsync/backup_plan'
+
+require 'lsync/script'
+require 'lsync/plan'
+
 require 'lsync/tee_logger'
 
 require 'fileutils'

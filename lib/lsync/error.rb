@@ -1,7 +1,7 @@
 
 module LSync
   
-  class BackupError < StandardError
+  class Error < StandardError
     def initialize(reason, components = {})
       @reason = reason
       @components = components
@@ -15,7 +15,7 @@ module LSync
     attr :components
   end
   
-  class BackupScriptError < BackupError
+  class ScriptError < BackupError
   end
   
   class BackupMethodError < BackupError

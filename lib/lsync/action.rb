@@ -1,7 +1,7 @@
 
 require 'pathname'
 require 'lsync/run'
-require 'lsync/backup_error'
+require 'lsync/error'
 
 module LSync
   

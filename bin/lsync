@@ -16,13 +16,18 @@ ARGV.options do |o|
 
   o.set_summary_indent('  ')
   o.banner = "Usage: #{script_name} [options] [directory | config]"
-  o.define_head "This script is used to run backups. If you specify a directory, files ending in .conf will all be processed."
+  o.define_head "This script is used to run lsync scripts and plans. If you specify a directory, files ending in .conf will all be processed."
 
   o.separator ""
   o.separator "Help and Copyright information"
 
-  o.on("-p plan", String, "Run the specified backup plan") { |plan| OPTIONS[:Plan] = plan }
-  o.on("-l log_path", String, "Set the directory for backup logs") { |log_path| OPTIONS[:LogPath] = log_path }
+  o.on("-p plan", String, "Run the specified backup plan") do |plan|
+		OPTIONS[:Plan] = plan
+	end
+	
+  o.on("-l log_path", String, "Set the directory for backup logs") do |log_path|
+		OPTIONS[:LogPath] = log_path
+	end
 
   o.on_tail("--copy", "Display copyright information") do
     puts "#{script_name} v#{LSync::VERSION::STRING}. Copyright (c) 2008-2009 Samuel Williams. Released under the GPLv3."
@@ -106,13 +111,13 @@ end
 
 def run_backups
   OPTIONS[:ConfigFiles].each do |c|
-    config = LSync::BackupScript.load_from_file(c)
+    config = LSync::Script.load_from_file(c)
     config.logger = $logger
     config.run_backup
   end
 
   if OPTIONS[:Plan]
-    config = LSync::BackupPlan.load_from_file(OPTIONS[:Plan])
+    config = LSync::Plan.load_from_file(OPTIONS[:Plan])
     config.logger = $logger
     config.run_backup
   end

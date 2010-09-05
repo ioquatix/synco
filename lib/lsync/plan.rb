@@ -68,7 +68,7 @@ module LSync
     end
   end
 
-  class BackupPlanRulebook < Ruleby::Rulebook
+  class PlanRulebook < Ruleby::Rulebook
     include Facts
 
     def rules
@@ -203,7 +203,7 @@ module LSync
     attr :rules
   end
 
-  class BackupPlan
+  class Plan
     def initialize(config, logger = nil)
       @logger = logger || Logger.new(STDOUT)
       
@@ -220,7 +220,7 @@ module LSync
 
         puts " Loading Rules ".center(80, "=")
 
-        BackupPlanRulebook.new(e).rules
+        PlanRulebook.new(e).rules
 
         @stages.each do |k,s|
           StageRulebook.new(e, s).rules

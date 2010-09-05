@@ -8,7 +8,7 @@ require 'lsync/directory'
 
 module LSync
 
-  class BackupScript
+  class Script
     private
     # Given a name, find out which server config matches it
     def find_named_server name
@@ -76,7 +76,7 @@ module LSync
 
       # At this point we must know the current server or we can't continue
       if current == nil
-        raise BackupScriptError.new("Could not determine current server!", :script => self, :master => @master)
+        raise ScriptError.new("Could not determine current server!", :script => self, :master => @master)
       end
 
       if @master.is_local?

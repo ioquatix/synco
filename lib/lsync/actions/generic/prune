@@ -6,7 +6,6 @@
 # was.
 
 require 'pathname'
-require 'fileutils'
 require 'optparse'
 
 require 'set'
@@ -125,7 +124,7 @@ class Policy
 			filtered_values += period.filter(values, options)
 		end
 
-		return filtered_values.to_a, (Set.new(values) - filtered_values).to_a
+		return filtered_values, (Set.new(values) - filtered_values)
 	end
 
 	attr :periods
@@ -133,10 +132,11 @@ end
 
 OPTIONS = {
 	:Format => "%Y.%m.%d-%H.%M.%S",
-	:Destination => "./*",
+	:Destination => "./",
 	:Policy => Policy.new,
 	:PolicyOptions => {},
-	:Wet => true
+	:Wet => true,
+	:Latest => "latest"
 }
 
 ARGV.options do |o|
@@ -160,6 +160,8 @@ ARGV.options do |o|
 	o.on("--dry-run", "Print out what would be deleted, but don't actually delete anything.") do
 		OPTIONS[:Wet] = false
 	end
+	
+	o.on("-l latest", String, "Specify the symlink name that points to the latest backup, so it won't be deleted.")
 
 	o.separator ""
 
@@ -223,29 +225,41 @@ end.parse!
 
 backups = []
 
-Dir[OPTIONS[:Destination]].each do |path|
-	next if path.match("latest")
-	date_string = File.basename(path)
+Dir.chdir(OPTIONS[:Destination]) do 
+	Dir["*"].each do |path|
+		next if path.match(OPTIONS[:Latest])
+		date_string = File.basename(path)
 
-	begin
-		backups << Rotation.new(path, DateTime.strptime(date_string, OPTIONS[:Format]))
-	rescue ArgumentError
-		puts "Skipping #{path}, error parsing #{date_string}: #{$!}"
+		begin
+			backups << Rotation.new(path, DateTime.strptime(date_string, OPTIONS[:Format]))
+		rescue ArgumentError
+			puts "Skipping #{path}, error parsing #{date_string}: #{$!}"
+		end
 	end
-end
 
-keep, erase = OPTIONS[:Policy].filter(backups)
+	keep, erase = OPTIONS[:Policy].filter(backups)
 
-if OPTIONS[:Wet]
-	erase.sort.each do |backup|
-		puts "Erasing #{backup.path}..."
-		$stdout.flush
-		FileUtils.rm_r(backup.path)
+	# We need to retain the latest backup regardless of policy
+	if OPTIONS[:Latest]
+		latest_backup = Pathname.new(OPTIONS[:Latest]).realpath.basename.to_s
+		puts "Retaining latest backup #{latest_backup}"
+		erase.delete(latest_backup)
 	end
-else
-	puts "*** Dry Run ***"
-	puts "\tKeeping:"
-	keep.sort.each { |backup| puts "\t\t#{backup.path}" }
-	puts "\tErasing:"
-	erase.sort.each { |backup| puts "\t\t#{backup.path}" }
+	
+	if OPTIONS[:Wet]
+		erase.sort.each do |backup|
+			puts "Erasing #{backup.path}..."
+			$stdout.flush
+
+			# Ensure that we can remove the backup
+			system("chmod", "-R", "ug+rwX", backup.path)
+			system("rm", "-rf", backup.path)
+		end
+	else
+		puts "*** Dry Run ***"
+		puts "\tKeeping:"
+		keep.sort.each { |backup| puts "\t\t#{backup.path}" }
+		puts "\tErasing:"
+		erase.sort.each { |backup| puts "\t\t#{backup.path}" }
+	end
 end

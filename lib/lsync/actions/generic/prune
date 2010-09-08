@@ -198,11 +198,11 @@ ARGV.options do |o|
 		OPTIONS[:Policy] << Monthly.new(count)
 	end
 
-	o.on("--quaterly count", Integer, "Set the number of monthly backups to keep.") do |count|
+	o.on("--quaterly count", Integer, "Set the number of quaterly backups to keep.") do |count|
 		OPTIONS[:Policy] << Quarterly.new(count)
 	end
 
-	o.on("--yearly count", Integer, "Set the number of monthly backups to keep.") do |count|
+	o.on("--yearly count", Integer, "Set the number of yearly backups to keep.") do |count|
 		OPTIONS[:Policy] << Yearly.new(count)
 	end
 

@@ -25,6 +25,7 @@ class Pathname
 		bits = cleanpath.to_s.split(SEPARATOR_PAT)
 		
 		bits.delete("")
+		bits.delete(".")
 		
 		return bits.size
 	end

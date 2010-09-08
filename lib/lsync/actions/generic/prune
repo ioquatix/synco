@@ -240,7 +240,7 @@ if OPTIONS[:Wet]
 	erase.sort.each do |backup|
 		puts "Erasing #{backup.path}..."
 		$stdout.flush
-		FileUtils.rm_rf(backup.path)
+		FileUtils.rm_r(backup.path)
 	end
 else
 	puts "*** Dry Run ***"

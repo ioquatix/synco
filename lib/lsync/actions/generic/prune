@@ -160,7 +160,7 @@ ARGV.options do |o|
 	o.on("--dry-run", "Print out what would be deleted, but don't actually delete anything.") do
 		OPTIONS[:Wet] = false
 	end
-	
+
 	o.on("-l latest", String, "Specify the symlink name that points to the latest backup, so it won't be deleted.")
 
 	o.separator ""
@@ -245,7 +245,7 @@ Dir.chdir(OPTIONS[:Destination]) do
 		puts "Retaining latest backup #{latest_backup}"
 		erase.delete(latest_backup)
 	end
-	
+
 	if OPTIONS[:Wet]
 		erase.sort.each do |backup|
 			puts "Erasing #{backup.path}..."

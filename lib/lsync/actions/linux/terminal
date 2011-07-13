@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 
 require 'base64'
+
 cmd = Base64.decode64(ARGV[0])
+
 exec cmd
 

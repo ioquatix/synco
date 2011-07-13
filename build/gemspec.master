@@ -1,25 +1,25 @@
 
 Dir.chdir("../") do
-  require 'lib/lsync/version'
+	require 'lib/lsync/version'
 
-  Gem::Specification.new do |s|
-    s.name = "lsync"
-    s.version = LSync::VERSION::STRING
-    s.author = "Samuel Williams"
-    s.email = "samuel.williams@oriontransfer.co.nz"
-    s.homepage = "http://www.oriontransfer.co.nz/software/lsync"
-    s.platform = Gem::Platform::RUBY
-    s.summary = "LSync is a tool for scripted synchronization and backups."
-    s.files = FileList["{bin,lib}/**/*"].to_a
-    s.require_path = "lib"
-    s.executables << 'lsync'
-    s.has_rdoc = false
-    #  s.extra_rdoc_files = ["README"]
+	Gem::Specification.new do |s|
+		s.name = "lsync"
+		s.version = LSync::VERSION::STRING
+		s.author = "Samuel Williams"
+		s.email = "samuel.williams@oriontransfer.co.nz"
+		s.homepage = "http://www.oriontransfer.co.nz/software/lsync"
+		s.platform = Gem::Platform::RUBY
+		s.summary = "LSync is a tool for scripted synchronization and backups."
+		s.files = FileList["{bin,lib}/**/*"].to_a
+		s.require_path = "lib"
+		s.executables << 'lsync'
+		s.has_rdoc = false
+		#  s.extra_rdoc_files = ["README"]
 
-    s.add_dependency("termios")
-    s.add_dependency("net-ssh")
-    s.add_dependency("ruleby")
-    
-    s.add_dependency("rexec")
-  end
+		s.add_dependency("termios")
+		s.add_dependency("net-ssh")
+		s.add_dependency("ruleby")
+
+		s.add_dependency("rexec")
+	end
 end

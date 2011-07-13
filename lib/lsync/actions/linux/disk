@@ -1,14 +1,14 @@
 #!/usr/bin/env ruby
 
 Commands = {
-  "mount" => "mount",
-  "unmount" => "umount"
+	"mount" => "mount",
+	"unmount" => "umount"
 }
 
 DevicePaths = [
-  "/dev/disk/by-label",
-  "/dev/disk/by-uuid",
-  "/dev"
+	"/dev/disk/by-label",
+	"/dev/disk/by-uuid",
+	"/dev"
 ]
 
 action = ARGV[0]
@@ -19,10 +19,10 @@ mountpoint = File.join('', 'mnt', disk_name)
 if (action == 'mountpoint')
 	puts File.join(mountpoint, ARGV[2..-1])
 else
-  puts "#{action.capitalize}ing #{mountpoint}..."
-  system Commands[action], mountpoint
-  
-  if $?.exitstatus != 0 or $?.exitstatus != 3383
-    exit 5
-  end
+	puts "#{action.capitalize}ing #{mountpoint}..."
+	system Commands[action], mountpoint
+
+	if $?.exitstatus != 0 or $?.exitstatus != 3383
+		exit 5
+	end
 end

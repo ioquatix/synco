@@ -34,13 +34,16 @@ end
 module LSync
 
 	class Directory
-		def initialize(config)
-			@path = Pathname.new(config["path"]).cleanpath.normalize_trailing_slash
-
-			abort "Directory paths must be relative (#{config["path"]} is absolute!)." if @path.absolute?
+		def initialize(path)
+			@path = Pathname.new(path).cleanpath.normalize_trailing_slash
+			@excludes = []
+			
+			@options = {}
 		end
 
+		attr :excludes
 		attr :path
+		attr :options
 
 		def to_s
 			@path.to_s

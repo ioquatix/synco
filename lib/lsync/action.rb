@@ -1,14 +1,19 @@
 
+require 'shellwords'
 require 'pathname'
 require 'lsync/run'
 require 'lsync/error'
 
 module LSync
 
-	class AbortBackupException < Exception
-
+	class AbortBackupException < StandardError
 	end
-
+	
+	# A runnable action, such as a shell command or action script.
+	#
+	# If the function starts with `%`, e.g. `%prune` this will map to one of the standard
+	# actions in the `lsync/actions` sub directory. These actions are generally implemented
+	# on a per-platform basis.
 	class Action
 		def initialize(function)
 			@function = function
@@ -43,7 +48,7 @@ module LSync
 				uname = `uname`.chomp.downcase
 
 				local_path = Action.script_path(uname, @script_name)
-				command = local_path.to_cmd + @arguments
+				command = [local_path] + Shellwords.shellwords(@arguments)
 			else
 				command = @function
 			end

@@ -54,7 +54,7 @@ end
 def setup_logging
   # Console log output
   $console_log = Logger.new($stdout)
-  $console_log.formatter = MinimalLogFormat.new
+  $console_log.formatter = LSync::MinimalLogFormat.new
   
   # File log output
   filename = File.basename(OPTIONS[:LogPath])

@@ -16,9 +16,6 @@ Dir.chdir("../") do
 		s.has_rdoc = false
 		#  s.extra_rdoc_files = ["README"]
 
-		s.add_dependency("termios")
-		s.add_dependency("net-ssh")
-		s.add_dependency("ruleby")
 
 		s.add_dependency("rexec")
 	end

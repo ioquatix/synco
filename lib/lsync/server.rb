@@ -1,27 +1,31 @@
 
-require 'lsync/shell'
+require 'lsync/event_handler'
+require 'lsync/shells/ssh'
 
-module LSync  
+module LSync
 	class Server
-		def initialize(config)
-			@host = config["host"] || "localhost"
-			@root = config["root"] || "/"
-
-			@actions = {
-				:before => (config["before"] || []).collect { |c| Action.new(c) },
-				:after => (config["after"] || []).collect { |c| Action.new(c) }
-			}
-
-			@shell = Shell.new(config["shell"])
-
+		include EventHandler
+		
+		def initialize(host)
+			@host = host
+			@root = "/"
+			
+			@platform = "generic"
+			
+			@shell = Shells::SSH.new
+			
 			@enabled = true
-
 			@connection = nil
 			@pid = nil
 		end
+		
+		attr :host, true
+		attr :root, true
+		attr :platform, true
+		attr :shell, true
 
 		def full_path(directory = "./")
-			p = File.expand_path(directory.to_s, root_path)
+			p = File.expand_path(directory.to_s, @root)
 
 			return Pathname.new(p).cleanpath.normalize_trailing_slash.to_s
 		end
@@ -62,18 +66,6 @@ module LSync
 			end
 
 			return @connection
-		end
-
-		attr :host
-		attr :shell
-		attr :root
-
-		def root_path
-			if @root == nil
-				return "/"
-			else
-				return @root.to_s
-			end
 		end
 
 		def run_actions(actions, logger)

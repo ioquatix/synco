@@ -1,5 +1,4 @@
 
-require 'shellwords'
 require 'pathname'
 require 'lsync/run'
 require 'lsync/error'
@@ -17,10 +16,11 @@ module LSync
 	class Action
 		def initialize(function)
 			@function = function
-
-			if @function.match(/^\%([a-z]+)(\s+.*)?$/)
-				@script_name = $1
-				@arguments = $2
+			
+			case @function[0]
+			when Symbol
+				@script_name = @function[0].to_s
+				@arguments = @function[1,@function.size]
 			else
 				@script_name = nil
 			end
@@ -31,7 +31,7 @@ module LSync
 		end
 
 		def run_on_server(server, logger)
-			logger.info "Running #{@function} on #{server}"
+			# logger.info "Running #{@function.to_cmd} on #{server}"
 
 			if server.is_local?
 				run_locally(server, logger)
@@ -48,13 +48,13 @@ module LSync
 				uname = `uname`.chomp.downcase
 
 				local_path = Action.script_path(uname, @script_name)
-				command = [local_path] + Shellwords.shellwords(@arguments)
+				command = [local_path] + @arguments
 			else
 				command = @function
 			end
 
 			ret = nil
-			Dir.chdir(server.root_path) do
+			Dir.chdir(server.root) do
 				ret = LSync.run_command(command, logger)
 			end
 
@@ -62,15 +62,15 @@ module LSync
 			when 0
 				return
 			when 1
-				raise AbortBackupException
+				raise AbortBackupException.new
 			else
-				raise BackupActionError
+				raise BackupActionError.new
 			end
 		end
 
 		def run_remotely(server, logger)
 			conn = server.connect
-			conn.send_object([:set_working_dir, server.root_path])
+			conn.send_object([:set_working_dir, server.root])
 
 			if @script_name
 				uname = `uname`.chomp.downcase

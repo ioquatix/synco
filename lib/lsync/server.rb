@@ -67,20 +67,5 @@ module LSync
 
 			return @connection
 		end
-
-		def run_actions(actions, logger)
-			actions = @actions[actions] if actions.class == Symbol
-			return if actions.size == 0
-
-			logger.info "Running #{actions.size} action(s):"
-
-			actions.each do |a|
-				begin
-					a.run_on_server(self, logger)
-				rescue StandardError
-					raise BackupActionError.new(self, a, $!)
-				end
-			end
-		end
 	end
 end

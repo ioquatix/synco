@@ -56,11 +56,23 @@ if OPTIONS[:UseUTC]
 	time = time.utc
 end
 
-dir = Pathname.new(ARGV[0] || ".inprogress")
+dir = Pathname.new(ARGV[0] || "backup.inprogress")
 rotation_dir = Pathname.new(OPTIONS[:Destination] ? OPTIONS[:Destination] : dir.dirname)
 rotated_name = time.strftime(OPTIONS[:Format])
 rotated_dir = rotation_dir + rotated_name
 latest_link = rotation_dir + OPTIONS[:Latest]
+
+unless File.exist? dir
+	$stderr.puts "Can not find source directory to rotate: #{dir} in #{Dir.getwd}!"
+	exit(10)
+end
+
+if File.exist? rotated_dir
+	$stderr.puts "Destination rotation name #{rotated_dir} already exists in #{Dir.getwd}!"
+	exit(20)
+end
+
+puts "Rotating #{dir} to #{rotated_dir}..."
 
 # Move rotated dir
 FileUtils.mv(dir, rotated_dir)

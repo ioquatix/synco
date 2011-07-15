@@ -27,8 +27,15 @@ module LSync
 	end
 	
 	class MinimalLogFormat
+		def initialize
+			@start_time = nil
+		end
+		
 		def call(severity, time, progname, msg)
-			"[#{severity.rjust(8)}] #{msg}\n"
+			@start_time ||= time
+			diff = time - @start_time
+			
+			"[T+#{sprintf('%0.1f', diff).ljust(5)} #{severity.rjust(5)}] #{msg}\n"
 		end
 	end
 end

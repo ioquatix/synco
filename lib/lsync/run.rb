@@ -4,7 +4,7 @@ require 'rexec/task'
 module LSync
 
 	def self.run_command(command, logger)
-		logger.info "Running: #{command.inspect} in #{Dir.getwd.dump}"
+		logger.info "Running: #{command.to_cmd} in #{Dir.getwd.dump}"
 
 		process_result = RExec::Task.open(command) do |task|
 			task.input.close

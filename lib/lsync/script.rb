@@ -5,8 +5,27 @@ require 'lsync/action'
 require 'lsync/method'
 require 'lsync/server'
 require 'lsync/directory'
+require 'lsync/try'
 
 module LSync
+	
+	class Controller
+		def initialize(script, server, logger)
+			@script = script
+			@server = server
+			@logger = logger
+		end
+		
+		def run!(*function)
+			action = Action.new(function)
+			
+			begin
+			   action.run_on_server(@server, @logger)
+			rescue StandardError
+				raise BackupActionError.new(@server, action, $!)
+			end
+		end
+	end
 	
 	class Script
 		include EventHandler
@@ -93,7 +112,9 @@ module LSync
 		def run!
 			# We buffer the log data so that if there is an error it is available to the notification sub-system
 			@log = StringIO.new
-			logger = @logger.tee(Logger.new(@log))
+			local_logger = Logger.new(@log)
+			local_logger.formatter = MinimalLogFormat.new
+			logger = @logger.tee(local_logger)
 
 			master = find_master_server
 			current = find_current_server
@@ -110,46 +131,69 @@ module LSync
 				logger.info "Master server is #{@master}..."
 			end
 
+			master_controller = Controller.new(self, master, logger)
+
+			failure_stack = []
+
 			# Run server pre-scripts.. if these fail then we abort the whole backup
-			begin
-				method.fire(:prepare)
-				master.fire(:prepare)
-			rescue AbortBackupException
+			LSync::try do |h|
 				# This specific error causes the backup to be aborted and is not considered a real error.
-				return
-			end
-
-			logger.info "Running backups for server #{current}..."
-
-			@servers.each do |name, server|
-				# S is always a data destination, therefore s can't be @master
-				next if server == master
-
-				# Skip servers that shouldn't be processed
-				unless @method.should_run?(master, current, server)
-					logger.info "\t" + "Skipping".rjust(20) + " : #{s}"
-					next
+				h.on(AbortBackupException) do
+					return
 				end
-
-				# Run pre-scripts for a particular server
-				begin
-					server.fire(:prepare)
-				rescue AbortBackupException
-					next
-				end
-
-				@directories.each do |directory|
-					logger.info "\t" + ("Processing " + directory.to_s).rjust(20) + " : #{server}"
+				
+				self.fire(:prepare)
+				h.error? do |error|
 					
-					method.run(master, server, directory)
+					self.fire(:failure, error)
+				end
+				
+				method.fire(:prepare)
+				h.error? do |error|
+					method.fire(:failure, error)
+				end
+				
+				master.fire(:prepare, master_controller)
+				h.error? do |error|
+					master.fire(:failure, master_controller, error)
 				end
 
-				# Run post-scripts for a particular server
-				server.fire(:success)
-			end
+				logger.info "Running backups for server #{current}..."
 
-			master.fire(:success)
-			method.fire(:success)
+				@servers.each do |name, server|
+					# S is always a data destination, therefore s can't be @master
+					next if server == master
+
+					# Skip servers that shouldn't be processed
+					unless @method.should_run?(master, current, server)
+						logger.info "\t" + "Skipping".rjust(20) + " : #{s}"
+						next
+					end
+
+					server_controller = Controller.new(self, server, logger)
+
+					h.try do
+						# Run pre-scripts for a particular server
+						server.fire(:prepare, server_controller)
+						h.error? do |error|
+							server.fire(:failure, server_controller, error)
+						end
+
+						@directories.each do |directory|
+							logger.info "\t" + ("Processing " + directory.to_s).rjust(20) + " : #{server}"
+						
+							method.run(master, server, directory)
+						end
+
+						# Run post-scripts for a particular server
+						server.fire(:success, server_controller)
+					end
+				end
+
+				master.fire(:success, master_controller)
+				method.fire(:success)
+				self.fire(:success)
+			end
 		end
 	end
 

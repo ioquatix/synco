@@ -16,7 +16,7 @@ Dir.chdir("../") do
 		s.has_rdoc = false
 		#  s.extra_rdoc_files = ["README"]
 
-
+		s.add_dependency("fingerprint")
 		s.add_dependency("rexec")
 	end
 end

@@ -24,10 +24,10 @@ module LSync
 	class ConfigurationError < Error
 	end
 
-	class BackupActionError < Error
-		def initialize(server, action, exception)
-			super("Backup action failed: #{action} (#{exception.to_s})", :action => action, :exception => exception)
+	# If a backup action fails, this error may be raised.
+	class ShellScriptError < Error
+		def initialize(script, return_code)
+			super("Shell script #{script} failed", :return_code => return_code)
 		end
 	end
-
 end

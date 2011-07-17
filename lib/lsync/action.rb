@@ -53,18 +53,13 @@ module LSync
 				command = @function
 			end
 
-			ret = nil
+			result = nil
 			Dir.chdir(server.root) do
-				ret = LSync.run_command(command, logger)
+				result = LSync.run_command(command, logger)
 			end
 
-			case(ret)
-			when 0
-				return
-			when 1
-				raise AbortBackupException.new
-			else
-				raise BackupActionError.new
+			if result != 0
+				raise ShellScriptError.new(command, result)
 			end
 		end
 

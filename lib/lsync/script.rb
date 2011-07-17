@@ -16,14 +16,10 @@ module LSync
 			@logger = logger
 		end
 		
+		# Run a given shell script on the server.
 		def run!(*function)
 			action = Action.new(function)
-			
-			begin
-			   action.run_on_server(@server, @logger)
-			rescue StandardError
-				raise BackupActionError.new(@server, action, $!)
-			end
+			action.run_on_server(@server, @logger)
 		end
 	end
 	

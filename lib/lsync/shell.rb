@@ -24,7 +24,7 @@ module LSync
 		
 		# The command required to start an instance of Ruby.
 		def ruby_command
-			@options[:ruby] || "ruby"
+			@options[:ruby] || ["ruby"]
 		end
 		
 		# The command required to connect to the remote machine.
@@ -38,7 +38,7 @@ module LSync
 				connection, pid = open_connection(server)
 				message = connection.receive_object
 			ensure
-				connection.dump_errors
+				connection.dump_errors if connection
 			end
 			
 			if message != :ready

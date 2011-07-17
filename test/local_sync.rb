@@ -30,6 +30,10 @@ $script = LSync::Script.new do |script|
 	
 	server(:dst) do |server|
 		server.root = ARGV[1]
+		
+		#server.on(:prepare) do
+		#	server.abort!
+		#end
 	end
 	
 	#server(:remote) do |server|
@@ -78,5 +82,10 @@ if MONITOR
 		end
 	end
 
-	monitor.run
+	begin
+		monitor.run
+	ensure
+		# We should wait for the backup to complete nicely.
+		$event_timer.join
+	end
 end

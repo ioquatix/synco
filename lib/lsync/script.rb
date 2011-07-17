@@ -26,7 +26,20 @@ module LSync
 	class Script
 		include EventHandler
 		
-		private
+		def initialize(options = {}, &block)
+			@logger = options[:logger] || Logger.new($stdout)
+			@method = nil
+			
+			@servers = {}
+			@directories = []
+
+			@log = nil
+			
+			if block_given?
+				instance_eval &block
+			end
+		end
+		
 		# Given a name, find out which server config matches it
 		def find_named_server name
 			if @servers.key? name
@@ -36,6 +49,8 @@ module LSync
 				return @servers.values.find { |s| s["host"] == hostname }
 			end
 		end
+		
+		alias :[] :find_named_server
 		
 		def find_master_server
 			find_named_server(@master)
@@ -57,21 +72,6 @@ module LSync
 			return server
 		end
 		
-		public
-		def initialize(options = {}, &block)
-			@logger = options[:logger] || Logger.new($stdout)
-			@method = nil
-			
-			@servers = {}
-			@directories = []
-
-			@log = nil
-			
-			if block_given?
-				instance_eval &block
-			end
-		end
-		
 		def server(name, &block)
 			case name
 			when Symbol
@@ -89,7 +89,6 @@ module LSync
 		
 		def backup(*paths, &block)
 			paths.each do |path|
-				puts path.inspect
 				directory = Directory.new(path)
 				
 				yield directory if block_given?

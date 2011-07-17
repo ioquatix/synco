@@ -17,7 +17,7 @@ end
 
 module RemoteMethods
 	def self.run_command(cmd)
-		$connection.send_object([:info, "Running #{cmd.to_cmd}..."])
+		$connection.send_object([:info, "Running #{cmd.inspect}..."])
 
 		cin, cout, cerr = Open3.popen3(cmd)
 		cin.close

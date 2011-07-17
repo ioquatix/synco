@@ -106,6 +106,8 @@ module LSync
 		attr :log
 		
 		def run!
+			start_time = Time.now
+			
 			# We buffer the log data so that if there is an error it is available to the notification sub-system
 			@log = StringIO.new
 			local_logger = Logger.new(@log)
@@ -190,6 +192,9 @@ module LSync
 				method.fire(:success)
 				self.fire(:success)
 			end
+			
+			end_time = Time.now
+			logger.info "Backup Completed (#{end_time - start_time}s)."
 		end
 	end
 

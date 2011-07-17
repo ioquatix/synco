@@ -16,6 +16,7 @@ def script_path(named)
 end
 
 module RemoteMethods
+	# Run a command in the local environment.
 	def self.run_command(cmd)
 		$connection.send_object([:info, "Running #{cmd.inspect}..."])
 
@@ -47,6 +48,7 @@ module RemoteMethods
 		$connection.send_object(:done)
 	end
 
+	# Run a script (given the code) in the local environment.
 	def self.run_script(name, code, arguments)
 		path = script_path(name)
 
@@ -59,10 +61,12 @@ module RemoteMethods
 		run_command(path + " " + arguments)
 	end
 
+	# Recursively make a directory (typically the server.root + directory)
 	def self.mkdir_p(path)
 		FileUtils.mkdir_p(path)
 	end
 
+	# Set the working directory (typically the server.root)
 	def self.set_working_dir(path)
 		Dir.chdir(path)
 	end

@@ -83,6 +83,7 @@ module LSync
 		
 		alias :[] :find_named_server
 		
+		# Find the master server based on the name #master= specified
 		def find_master_server
 			find_named_server(@master)
 		end
@@ -103,6 +104,7 @@ module LSync
 			return server
 		end
 		
+		# Register a server with the backup script.
 		def server(name, &block)
 			case name
 			when Symbol
@@ -118,6 +120,7 @@ module LSync
 			@servers[name] = server
 		end
 		
+		# Backup a particular path (or paths).
 		def backup(*paths, &block)
 			paths.each do |path|
 				directory = Directory.new(path)
@@ -128,13 +131,25 @@ module LSync
 			end
 		end
 
+		# The script logger which will be provided all events when the script is run.
 		attr :logger, true
+		
+		# The master server name (e.g. symbolic or host name)
 		attr :master, true
+		
+		# A specific method which will perform the backup (e.g. an isntance of LSync::Method)
 		attr :method, true
+		
+		# All servers which are participating in the backup process.
 		attr :servers
+		
+		# All directories which may be synchronised.
 		attr :directories
+		
+		# Log data (an +IO+) specific to the current script.
 		attr :log
 		
+		# Run the backup process for all servers and directories specified.
 		def run!
 			start_time = Time.now
 			

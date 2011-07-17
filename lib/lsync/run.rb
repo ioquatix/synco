@@ -3,6 +3,7 @@ require 'rexec/task'
 
 module LSync
 
+	# Run a specific command and output the results to the given logger.
 	def self.run_command(command, logger)
 		logger.info "Running: #{command.to_cmd} in #{Dir.getwd.dump}"
 

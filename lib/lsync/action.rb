@@ -10,8 +10,8 @@ module LSync
 	
 	# A runnable action, such as a shell command or action script.
 	#
-	# If the function starts with `%`, e.g. `%prune` this will map to one of the standard
-	# actions in the `lsync/actions` sub directory. These actions are generally implemented
+	# If the first argument is a symbol, then this will map to one of the standard
+	# actions in the `lsync/actions` subdirectory. These actions are sometimes implemented
 	# on a per-platform basis.
 	class Action
 		def initialize(function)
@@ -26,10 +26,12 @@ module LSync
 			end
 		end
 
+		# Return a string representation of the action for logging.
 		def to_s
-			@function
+			@function.to_cmd
 		end
 
+		# Run the action on the given server, typically in the root directory specified.
 		def run_on_server(server, logger)
 			# logger.info "Running #{@function.to_cmd} on #{server}"
 
@@ -41,6 +43,7 @@ module LSync
 		end
 
 		private
+		# Run the script locally by invoking it directly.
 		def run_locally(server, logger)
 			command = nil
 
@@ -63,6 +66,7 @@ module LSync
 			end
 		end
 
+		# Run the script remotely by sending the data across the network and executing it.
 		def run_remotely(server, logger)
 			conn = server.connect
 			conn.send_object([:set_working_dir, server.root])
@@ -86,11 +90,12 @@ module LSync
 			end
 		end
 
+		# Figure out the path of the script, which may depend on the given platform.
 		def self.script_path(platform, name)
 			exact_script_path(platform, name) || exact_script_path("generic", name)
 		end
 
-		private
+		# Return the exact path of a builtin action script.
 		def self.exact_script_path(platform, name)
 			path = (Pathname.new(__FILE__).dirname + "actions" + platform + name).expand_path
 			path.exist? ? path : nil

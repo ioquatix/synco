@@ -1,6 +1,7 @@
 
 module LSync
 
+	# Base exception class which keeps track of related components.
 	class Error < StandardError
 		def initialize(reason, components = {})
 			@reason = reason
@@ -15,16 +16,15 @@ module LSync
 		attr :components
 	end
 
+	# Indicates that there has been a major backup script error.
 	class ScriptError < Error
 	end
 
+	# Indicates that there has been a major backup method error.
 	class BackupMethodError < Error
 	end
 
-	class ConfigurationError < Error
-	end
-
-	# If a backup action fails, this error may be raised.
+	# Indicates that a backup action shell script has failed.
 	class ShellScriptError < Error
 		def initialize(script, return_code)
 			super("Shell script #{script} failed", :return_code => return_code)

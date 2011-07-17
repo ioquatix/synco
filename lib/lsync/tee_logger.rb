@@ -1,11 +1,14 @@
 
 module LSync
+	# A helper to provide easy access to the TeeLogger functionality.
 	module TeeHelper
 		def tee(*loggers)
 			return TeeLogger.new(self, *loggers)
 		end
 	end
 
+	# The tee logger provides a simple split logging system where multiple logs may receive the same
+	# messages. These logs can route messages to different destinations using different formatting.
 	class TeeLogger
 		def initialize(*loggers)
 			@loggers = Set.new(loggers.flatten.compact)
@@ -26,6 +29,7 @@ module LSync
 		include TeeHelper
 	end
 	
+	# A minimal log format that keeps track of the start time, and prints the minimal amount of information.
 	class MinimalLogFormat
 		def initialize
 			@start_time = nil

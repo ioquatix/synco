@@ -30,7 +30,7 @@ module LSync
 			end
 			
 			def run(master_server, target_server, directory)
-				arguments ||= @options[:arguments]
+				arguments = (@options[:arguments] || ["--archive"]) + (directory.options[:arguments] || [])
 
 				local_server = nil
 				remote_server = nil
@@ -88,7 +88,7 @@ module LSync
 			end
 			
 			def run(master_server, target_server, directory)
-				arguments ||= @options[:arguments]
+				arguments = (@options[:arguments] || []) + (directory.options[:arguments] || [])
 				
 				link_dest = Pathname.new("../" * (directory.path.depth + 1)) + "latest" + directory.path
 				arguments += ['--archive', '--link-dest', link_dest.to_s]

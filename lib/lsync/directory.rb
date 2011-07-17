@@ -1,4 +1,5 @@
 
+require 'lsync/event_handler'
 require 'pathname'
 
 class Pathname
@@ -34,6 +35,8 @@ end
 module LSync
 
 	class Directory
+		include EventHandler
+		
 		def initialize(path)
 			@path = Pathname.new(path).cleanpath.normalize_trailing_slash
 			@excludes = []

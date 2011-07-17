@@ -9,12 +9,23 @@ require 'lsync/try'
 
 module LSync
 	
-	class Controller
+	# The server controller provides event handlers with a unified interface
+	# for dealing with servers and associated actions.
+	class ServerController
 		def initialize(script, server, logger)
 			@script = script
 			@server = server
 			@logger = logger
 		end
+		
+		# The containing script.
+		attr :script
+		
+		# The current server.
+		attr :server
+		
+		# The output logger.
+		attr :logger
 		
 		# Run a given shell script on the server.
 		def run!(*function)
@@ -23,6 +34,26 @@ module LSync
 		end
 	end
 	
+	# The directory controller provides event handlers with a unified interface
+	# for dealing with a particular backup in a particular directory.
+	class DirectoryController < ServerController
+		def initialize(script, master, server, directory, logger)
+			super(script, server, logger)
+			
+			@master = master
+			@directory = directory
+		end
+		
+		# The master server where data is being copied from.
+		attr :master
+		
+		# The directory that the data is being copied within.
+		attr :directory
+	end
+	
+	# The main backup/synchronisation mechanism is the backup script. It specifies all
+	# servers and directories, and these are then combined specifically to produce the
+	# desired data replication behaviour.
 	class Script
 		include EventHandler
 		
@@ -128,72 +159,50 @@ module LSync
 				logger.info "Master server is #{@master}..."
 			end
 
-			master_controller = Controller.new(self, master, logger)
+			master_controller = ServerController.new(self, master, logger)
 
-			failure_stack = []
-
-			# Run server pre-scripts.. if these fail then we abort the whole backup
-			LSync::try do |h|
-				# This specific error causes the backup to be aborted and is not considered a real error.
-				h.on(AbortBackupException) do
-					return
-				end
-				
-				self.fire(:prepare)
-				h.error? do |error|
-					
-					self.fire(:failure, error)
-				end
-				
-				method.fire(:prepare)
-				h.error? do |error|
-					method.fire(:failure, error)
-				end
-				
-				master.fire(:prepare, master_controller)
-				h.error? do |error|
-					master.fire(:failure, master_controller, error)
-				end
-
-				logger.info "Running backups for server #{current}..."
-
-				@servers.each do |name, server|
-					# S is always a data destination, therefore s can't be @master
-					next if server == master
-
-					# Skip servers that shouldn't be processed
-					unless @method.should_run?(master, current, server)
-						logger.info "\t" + "Skipping".rjust(20) + " : #{s}"
-						next
-					end
-
-					server_controller = Controller.new(self, server, logger)
-
-					h.try do
-						# Run pre-scripts for a particular server
-						server.fire(:prepare, server_controller)
-						h.error? do |error|
-							server.fire(:failure, server_controller, error)
-						end
-
-						@directories.each do |directory|
-							logger.info "\t" + ("Processing " + directory.to_s).rjust(20) + " : #{server}"
+			self.try do
+				method.try do
+					master.try(master_controller) do
+						logger.info "Running backups for server #{current}..."
 						
-							method.run(master, server, directory)
-						end
-
-						# Run post-scripts for a particular server
-						server.fire(:success, server_controller)
+						run_backups!(master, current, logger)
 					end
 				end
-
-				master.fire(:success, master_controller)
-				method.fire(:success)
-				self.fire(:success)
 			end
 			
 			end_time = Time.now
 			logger.info "Backup Completed (#{end_time - start_time}s)."
+		end
+		
+		protected
+		
+		# This function runs the method for each directory and server combination specified.
+		def run_backups!(master, current, logger)
+			@servers.each do |name, server|
+				# S is always a data destination, therefore s can't be @master
+				next if server == master
+
+				# Skip servers that shouldn't be processed
+				unless @method.should_run?(master, current, server)
+					logger.info "\t" + "Skipping".rjust(20) + " : #{s}"
+					next
+				end
+
+				server_controller = ServerController.new(self, server, logger)
+
+				server.try(server_controller) do
+					@directories.each do |directory|
+						directory_controller = DirectoryController.new(self, master, server, directory, logger)
+
+						directory.try(directory_controller) do
+							logger.info "\t" + ("Processing " + directory.to_s).rjust(20) + " : #{server}"
+					
+							method.run(master, server, directory)
+						end
+					end
+				end
+			end
 		end
 	end
 

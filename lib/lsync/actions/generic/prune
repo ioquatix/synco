@@ -225,7 +225,7 @@ end.parse!
 
 backups = []
 
-Dir.chdir(OPTIONS[:Destination]) do 
+Dir.chdir(OPTIONS[:Destination]) do
 	Dir["*"].each do |path|
 		next if path.match(OPTIONS[:Latest])
 		date_string = File.basename(path)
@@ -240,7 +240,7 @@ Dir.chdir(OPTIONS[:Destination]) do
 	keep, erase = OPTIONS[:Policy].filter(backups)
 
 	# We need to retain the latest backup regardless of policy
-	if OPTIONS[:Latest]
+	if OPTIONS[:Latest] && File.exist?(OPTIONS[:Latest])
 		latest_backup = Pathname.new(OPTIONS[:Latest]).realpath.basename.to_s
 		puts "Retaining latest backup #{latest_backup}"
 		erase.delete(latest_backup)

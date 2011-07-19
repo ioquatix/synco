@@ -42,7 +42,7 @@ module LSync
 			end
 			
 			if message != :ready
-				raise ConnectionError("Remote shell connection was not successful: #{message}")
+				raise ConnectionError.new("Remote shell connection was not successful: #{message}")
 			end
 			
 			return connection, pid

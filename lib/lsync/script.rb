@@ -5,7 +5,6 @@ require 'lsync/action'
 require 'lsync/method'
 require 'lsync/server'
 require 'lsync/directory'
-require 'lsync/try'
 
 module LSync
 	

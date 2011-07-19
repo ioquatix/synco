@@ -19,22 +19,20 @@ module LSync
 			def command_arguments
 				args = []
 
-				if @name == "ssh"
-					@options.each do |k,v|
-						case(k.to_sym)
-						when :port
-							args << ['-p', v.to_i]
-						when :key
-							args << ['-i', v.dump]
-						when :keys
-							v.each { |key_path| args << ['-i', key_path.dump] } 
-						when :timeout
-							args << ['-o', "ConnectTimeout #{v.to_i}".dump]
-						when :compression
-							args << ['-C'] if v
-						when :user
-							args << ['-l', v.to_s.dump]
-						end
+				@options.each do |k,v|
+					case(k.to_sym)
+					when :port
+						args += ['-p', v.to_s]
+					when :key
+						args += ['-i', v]
+					when :keys
+						v.each { |key_path| args += ['-i', key_path] } 
+					when :timeout
+						args += ['-o', "ConnectTimeout #{v.to_i}".to_cmd]
+					when :compression
+						args += ['-C'] if v
+					when :user
+						args += ['-l', v.to_s]
 					end
 				end
 

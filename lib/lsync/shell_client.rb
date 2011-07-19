@@ -18,16 +18,16 @@ end
 module RemoteMethods
 	# Run a command in the local environment.
 	def self.run_command(cmd)
+		$logger.info("Running #{cmd.inspect}...")
 		$connection.send_object([:info, "Running #{cmd.inspect}..."])
 
-		cin, cout, cerr = Open3.popen3(cmd)
+		cin, cout, cerr = Open3.popen3(*cmd)
 		cin.close
 
 		pipes = [cout, cerr]
 
 		while pipes.size > 0
 			ready = IO.select(pipes)
-			$logger.info(ready.inspect)
 
 			ready[0].each do |pipe|
 				# Delete the pipe when it has become closed
@@ -58,7 +58,7 @@ module RemoteMethods
 
 		FileUtils.chmod 0755, path
 
-		run_command(path + " " + arguments)
+		run_command([path] + arguments)
 	end
 
 	# Recursively make a directory (typically the server.root + directory)

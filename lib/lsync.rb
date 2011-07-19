@@ -21,11 +21,7 @@ require 'set'
 require 'logger'
 
 require 'lsync/version'
-require 'lsync/extensions'
-
 require 'lsync/script'
-require 'lsync/plan'
-
 require 'lsync/tee_logger'
 
 require 'fileutils'

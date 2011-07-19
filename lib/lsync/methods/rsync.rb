@@ -1,4 +1,6 @@
 
+require 'lsync/method'
+
 module LSync
 	module Methods
 		

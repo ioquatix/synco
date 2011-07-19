@@ -26,6 +26,23 @@ class Rotation
 	def <=> other
 		return other.time <=> @time
 	end
+	
+	def eql? other
+		case other
+		when Rotation
+			@path.eql?(other.path) # && @time.eql?(other.time)
+		else
+			@path.eql?(other.to_s)
+		end
+	end
+	
+	def hash
+		@path.hash
+	end
+	
+	def to_s
+		@path
+	end
 end
 
 class Period
@@ -241,9 +258,14 @@ Dir.chdir(OPTIONS[:Destination]) do
 
 	# We need to retain the latest backup regardless of policy
 	if OPTIONS[:Latest] && File.exist?(OPTIONS[:Latest])
-		latest_backup = Pathname.new(OPTIONS[:Latest]).realpath.basename.to_s
-		puts "Retaining latest backup #{latest_backup}"
-		erase.delete(latest_backup)
+		path = Pathname.new(OPTIONS[:Latest]).realpath.basename.to_s
+		latest_rotation = erase.find { |rotation| rotation.path == path }
+
+		if latest_rotation
+			puts "Retaining latest backup #{latest_rotation}"
+			erase.delete(latest_rotation)
+			keep << latest_rotation
+		end
 	end
 
 	if OPTIONS[:Wet]

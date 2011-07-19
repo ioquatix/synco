@@ -1,5 +1,5 @@
 LSync
-===========
+=====
 
 * Author: Samuel G. D. Williams (<http://www.oriontransfer.co.nz>)
 * Copyright (C) 2009, 2011 Samuel G. D. Williams.

@@ -35,7 +35,7 @@ module LSync
 		def full_path(directory = "./")
 			p = File.expand_path(directory.to_s, @root)
 
-			return Pathname.new(p).cleanpath.normalize_trailing_slash.to_s
+			return Pathname.new(p).cleanpath.normalize_trailing_slash
 		end
 
 		# Give a general connection string (e.g +"host:/directory"+ or +"/directory"+ if local).

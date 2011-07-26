@@ -39,7 +39,7 @@ module LSync
 			@fired = nil
 			@timeout = nil
 			
-			@callback = Proc.new(&block)
+			@callback = block
 			@processing = Mutex.new
 		end
 		

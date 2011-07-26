@@ -20,6 +20,13 @@ For examples please see the main [project page][1].
 
 [1]: http://www.oriontransfer.co.nz/gems/lsync
 
+Overview
+--------
+
+LSync imposes a particular structure regarding the organisation of backup scripts:
+Backup scripts involve a set of servers and directories. A server is a logical unit 
+where files are available or stored. Directories are specific places within servers.
+
 License
 -------
 

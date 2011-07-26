@@ -35,7 +35,10 @@ class Pathname
 end
 
 module LSync
-
+	
+	class AbsolutePathError < Error
+	end
+	
 	# A specific directory which is relative to the root of a given server. Specific configuration details
 	# such as excludes and other options may be specified.
 	class Directory
@@ -44,6 +47,10 @@ module LSync
 		def initialize(path)
 			@path = Pathname.new(path).cleanpath.normalize_trailing_slash
 			@options = {:arguments => []}
+			
+			if @path.absolute?
+				raise AbsolutePathError.new("Path #{path} may not be absolute!", :path => path)
+			end
 		end
 
 		attr :path

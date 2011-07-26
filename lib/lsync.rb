@@ -30,4 +30,11 @@ require 'optparse'
 require 'open-uri'
 
 module LSync
+	
+	def self.run_script(options = {}, &block)
+		script = LSync::Script.new(options, &block)
+		
+		script.run!
+	end
+	
 end

@@ -57,59 +57,61 @@ module LSync
 				# Find a server config that specifies the local host
 				server = @servers.values.find { |s| s.is_local? }
 			end
-			
+
 			return server
 		end
-		
+
 		# Register a server with the backup script.
-		def server(name, &block)
+		def server(name)
 			case name
 			when Symbol
 				host = "localhost"
 			else
 				host = name.to_s
 			end
-			
+
 			server = Server.new(host)
-			
+
 			yield server if block_given?
-			
+
 			@servers[name] = server
 		end
-		
+
 		# Backup a particular path (or paths).
-		def backup(*paths, &block)
+		def copy(*paths)
 			paths.each do |path|
 				directory = Directory.new(path)
-				
+
 				yield directory if block_given?
-				
+
 				@directories << directory
 			end
 		end
 
+		alias :backup :copy
+
 		# The script logger which will be provided all events when the script is run.
 		attr :logger, true
-		
+
 		# The master server name (e.g. symbolic or host name)
 		attr :master, true
-		
+
 		# A specific method which will perform the backup (e.g. an isntance of LSync::Method)
 		attr :method, true
-		
+
 		# All servers which are participating in the backup process.
 		attr :servers
-		
+
 		# All directories which may be synchronised.
 		attr :directories
-		
+
 		# Log data (an +IO+) specific to the current script.
 		attr :log
-		
+
 		# Run the backup process for all servers and directories specified.
 		def run!
 			start_time = Time.now
-			
+
 			# We buffer the log data so that if there is an error it is available to the notification sub-system
 			@log = StringIO.new
 			local_logger = Logger.new(@log)

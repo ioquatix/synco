@@ -5,71 +5,29 @@ require 'lsync/action'
 require 'lsync/method'
 require 'lsync/server'
 require 'lsync/directory'
+require 'lsync/controller'
 
 module LSync
-	
-	# The server controller provides event handlers with a unified interface
-	# for dealing with servers and associated actions.
-	class ServerController
-		def initialize(script, server, logger)
-			@script = script
-			@server = server
-			@logger = logger
-		end
-		
-		# The containing script.
-		attr :script
-		
-		# The current server.
-		attr :server
-		
-		# The output logger.
-		attr :logger
-		
-		# Run a given shell script on the server.
-		def run!(*function)
-			action = Action.new(function)
-			action.run_on_server(@server, @logger)
-		end
-	end
-	
-	# The directory controller provides event handlers with a unified interface
-	# for dealing with a particular backup in a particular directory.
-	class DirectoryController < ServerController
-		def initialize(script, master, server, directory, logger)
-			super(script, server, logger)
-			
-			@master = master
-			@directory = directory
-		end
-		
-		# The master server where data is being copied from.
-		attr :master
-		
-		# The directory that the data is being copied within.
-		attr :directory
-	end
-	
 	# The main backup/synchronisation mechanism is the backup script. It specifies all
 	# servers and directories, and these are then combined specifically to produce the
 	# desired data replication behaviour.
 	class Script
 		include EventHandler
-		
+
 		def initialize(options = {}, &block)
 			@logger = options[:logger] || Logger.new($stdout)
 			@method = nil
-			
+
 			@servers = {}
 			@directories = []
 
 			@log = nil
-			
+
 			if block_given?
 				instance_eval &block
 			end
 		end
-		
+
 		# Given a name, find out which server config matches it
 		def find_named_server name
 			if @servers.key? name
@@ -79,19 +37,19 @@ module LSync
 				return @servers.values.find { |s| s["host"] == hostname }
 			end
 		end
-		
+
 		alias :[] :find_named_server
-		
+
 		# Find the master server based on the name #master= specified
 		def find_master_server
 			find_named_server(@master)
 		end
-		
+
 		# Find out the config section for the current server
 		def find_current_server
 			master = find_master_server
 			server = nil
-			
+
 			# Find out if the master server is local...
 			if master.is_local?
 				server = master
@@ -173,24 +131,24 @@ module LSync
 				logger.info "Master server is #{@master}..."
 			end
 
-			master_controller = ServerController.new(self, master, logger)
+			master_controller = ServerController.new(self, logger, master)
 
 			self.try do
 				method.try do
 					master.try(master_controller) do
 						logger.info "Running backups for server #{current}..."
-						
+
 						run_backups!(master, current, logger)
 					end
 				end
 			end
-			
+
 			end_time = Time.now
 			logger.info "Backup Completed (#{end_time - start_time}s)."
 		end
-		
+
 		protected
-		
+
 		# This function runs the method for each directory and server combination specified.
 		def run_backups!(master, current, logger)
 			@servers.each do |name, server|
@@ -203,15 +161,15 @@ module LSync
 					next
 				end
 
-				server_controller = ServerController.new(self, server, logger)
+				server_controller = CopyController.new(self, logger, master, server)
 
 				server.try(server_controller) do
 					@directories.each do |directory|
-						directory_controller = DirectoryController.new(self, master, server, directory, logger)
+						directory_controller = DirectoryController.new(self, logger, master, server, directory)
 
 						directory.try(directory_controller) do
 							logger.info "\t" + ("Processing " + directory.to_s).rjust(20) + " : #{server}"
-					
+
 							method.run(master, server, directory)
 						end
 					end

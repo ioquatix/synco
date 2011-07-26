@@ -12,13 +12,21 @@ module LSync
 		end
 
 		# Fire an event which calls all registered event handlers in the order they were defined.
+		# The first argument is used to #instance_eval any handlers.
 		def fire(event, *args)
 			handled = false
+			
+			scope = args.shift
 			
 			if @events && @events[event]
 				@events[event].each do |handler|
 					handled = true
-					handler.call(*args)
+
+					if scope
+						scope.instance_eval &handler
+					else
+						handler.call
+					end
 				end
 			end
 			

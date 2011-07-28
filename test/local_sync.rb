@@ -19,8 +19,7 @@ unless ARGV.size == 2
 end
 
 $script = LSync::Script.new do |script|
-	# Use rsync snapshot method
-	script.method = LSync::Methods::RSync.new(:push, :arguments => ["-a", "--delete"])
+	script.method = LSync::Methods::RSync.new(:push, :arguments => ["--archive", "--delete"])
 	
 	script.master = :src
 	
@@ -32,6 +31,7 @@ $script = LSync::Script.new do |script|
 		server.root = ARGV[1]
 		
 		#server.on(:prepare) do
+		#	logger.warn "Aborting backup!"
 		#	server.abort!
 		#end
 	end

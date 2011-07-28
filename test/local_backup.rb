@@ -16,7 +16,6 @@ end
 # $growl.register
 
 $script = LSync::Script.new do |script|
-	# Use rsync snapshot method
 	script.method = LSync::Methods::RSyncSnapshot.new(:push, :arguments => ["--archive", "--compress", "--stats"])
 	
 	script.master = :src
@@ -28,9 +27,10 @@ $script = LSync::Script.new do |script|
 	server(:dst) do |server|
 		server.root = ARGV[1]
 		
-		server.on(:success) do |controller|
-			controller.run! :prune, "--default-policy"
-			controller.run! :rotate, script.method.inprogress_path
+		# Runs after all directories have been successfully backed up.
+		server.on(:success) do
+			target.run :prune, "--default-policy"
+			target.run :rotate, script.method.inprogress_path
 		end
 	end
 	

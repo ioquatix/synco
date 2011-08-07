@@ -12,8 +12,10 @@ Dir.chdir("../") do
 		s.summary = "LSync is a tool for scripted synchronization and backups."
 		s.files = FileList["{bin,lib}/**/*"].to_a + ["README.md"]
 
-		s.add_dependency("fingerprint", ">= 1.1.3")
-		s.add_dependency("rexec", ">= 1.2.6")
+		s.executables += FileList["bin/*"].gsub("bin/", "")
+
+		s.add_dependency("fingerprint", ">= 1.2.3")
+		s.add_dependency("rexec", ">= 1.3.0")
 
 		s.has_rdoc = "yard"
 	end

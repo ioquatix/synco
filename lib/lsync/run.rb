@@ -22,33 +22,50 @@ require 'rexec/task'
 
 module LSync
 
-	# Run a specific command and output the results to the given logger.
-	def self.run_command(command, logger)
-		logger.info "Running: #{command.to_cmd} in #{Dir.getwd.dump}"
+	def self.log_task(task, logger)
+		pipes = [task.output, task.error]
 
-		process_result = RExec::Task.open(command) do |task|
-			task.input.close
-			pipes = [task.output, task.error]
+		while pipes.size > 0
+			result = IO.select(pipes)
 
-			while pipes.size > 0
-				result = IO.select(pipes)
+			result[0].each do |pipe|
+				if pipe.closed? || pipe.eof?
+					pipes.delete(pipe)
+					next
+				end
 
-				result[0].each do |pipe|
-					if pipe.closed? || pipe.eof?
-						pipes.delete(pipe)
-						next
-					end
-
-					if pipe == task.output
-						logger.info pipe.readline.chomp
-					elsif pipe == task.error
-						logger.error pipe.readline.chomp
-					end
+				if pipe == task.output
+					logger.info pipe.readline.chomp
+				elsif pipe == task.error
+					logger.error pipe.readline.chomp
 				end
 			end
 		end
-
-		return process_result
 	end
 
+	# Run a specific command and output the results to the given logger.
+	def self.run_command(root, command, logger)
+		Dir.chdir(root) do
+			logger.info "Running #{command.inspect} in #{Dir.getwd.inspect}"
+
+			process_result = RExec::Task.open(command) do |task|
+				log_task(task, logger)
+			end
+
+			return process_result
+		end
+	end
+
+	def self.run_remote_command(root, connection_command, command, logger)
+		logger.info "Running remote command #{command.inspect} in #{root}"
+		
+		process_result = RExec::Task.open(connection_command) do |connection|
+			connection.puts(["cd", root].to_cmd)
+			connection.puts((["exec"] + command).to_cmd)
+			
+			LSync::log_task(connection, logger)
+		end
+		
+		return process_result
+	end
 end

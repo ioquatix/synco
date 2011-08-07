@@ -19,9 +19,9 @@
 # THE SOFTWARE.
 
 module LSync
-  module VERSION #:nodoc:
+  module VERSION
     MAJOR = 2
-    MINOR = 2
+    MINOR = 3
     TINY  = 0
 
     STRING = [MAJOR, MINOR, TINY].join('.')

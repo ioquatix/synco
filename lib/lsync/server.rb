@@ -25,18 +25,23 @@ module LSync
 	class Server
 		include EventHandler
 		
-		def initialize(host)
+		def initialize(host, options = {})
+			@options = options
+ 
 			@host = host
 			@root = "/"
-			
-			@platform = "generic"
-			
+
+			@platform = nil
+
 			@shell = Shells::SSH.new
-			
+
 			@enabled = true
-			@connection = nil
-			@pid = nil
+
+			@roles = Set.new
 		end
+		
+		# The roles that dictate how the server fits into the overall infratstructure.
+		attr :roles, true
 		
 		# The host name (e.g. DNS entry) for the given server
 		attr :host, true
@@ -59,15 +64,19 @@ module LSync
 
 		# Give a general connection string (e.g +"host:/directory"+ or +"/directory"+ if local).
 		def connection_string(directory)
-			if is_local?
+			if local?
 				return full_path(directory)
 			else
-				return @host + ":" + full_path(directory).dump
+				return @host + ":" + full_path(directory).to_cmd
 			end
 		end
 
+		def role?(role)
+			@roles.include?(role) || @roles.include?(:all) || role == :any
+		end
+
 		# Checks if the host resolves to the local machine.
-		def is_local?
+		def local?
 			return true if @host == "localhost"
 
 			hostname = Socket.gethostname
@@ -84,15 +93,6 @@ module LSync
 		# String representation of the server for logging.
 		def to_s
 			"#{@host}:#{full_path}"
-		end
-
-		# Connect to the server using the given #shell and #connection_string.
-		def connect
-			unless @connection
-				@connection, @pid = @shell.connect(self)
-			end
-
-			return @connection
 		end
 	end
 end

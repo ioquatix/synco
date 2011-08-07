@@ -31,23 +31,88 @@ module LSync
 		# The output logger.
 		attr :logger
 	end
-
+	
 	# The server controller provides event handlers with a unified interface
 	# for dealing with servers and associated actions.
 	class ServerController < BasicController
 		def initialize(script, logger, server)
 			super(script, logger)
-			
+
 			@server = server
+
+			@connection = nil
+			@platform = nil
 		end
 
 		# The current server.
 		attr :server
 
-		# Run a given shell script on the server.
-		def run(*function)
-			action = Action.new(function)
-			action.run_on_server(@server, @logger)
+		def run(command, options = {})
+			task = nil
+			
+			root ||= options[:root] || @server.root
+			
+			if String === command
+				command = [command]
+			end
+			
+			begin
+				connection, task = @server.shell.connect(@server)
+				connection.send_object([:chdir, root])
+				
+				if options[:script]
+					data = command[0]
+					
+					command = command.dup
+					command[0] = "script"
+					
+					connection.send_object([:script, command, data])
+				elsif options[:remote]
+					data = File.read(command[0])
+					connection.send_object([:script, command, data])
+				else
+					connection.send_object([:exec, command])
+				end
+				
+				if block_given?
+					yield task
+				else
+					LSync::log_task(task, @logger)
+				end
+			ensure
+				if task
+					task.stop
+					task.wait
+				end
+			end
+		end
+
+		# Run a command on the given server using this shell.
+		def exec(command, options = {}, &block)
+			unless @server.local?
+				command = @server.shell.connection_command(@server) + ["--"] + command
+			end
+
+			puts "command: #{command.inspect}"
+			RExec::Task.open(command, options, &block)
+		end
+
+		def exec!(command, options = {})
+			exec(command, options) do |task|
+				task.input.close
+
+				result = task.wait
+
+				unless result.exitstatus == 0
+					raise ShellScriptError.new("Command #{command.inspect} failed: #{result.exitstatus}", result.exitstatus)
+				end
+
+				return task.output.read
+			end
+		end
+
+		def ==(other)
+			@server == other.server
 		end
 		
 		def respond_to?(name)
@@ -55,16 +120,17 @@ module LSync
 		end
 		
 		def method_missing(name, *args, &block)
-			@server.call(name, *args, &block)
+			@server.send(name, *args, &block)
 		end
 	end
 	
 	class CopyController < BasicController
-		def initialize(script, logger, master, target)
+		def initialize(script, logger, master, target, current)
 			super(script, logger)
 			
 			@master = ServerController.new(script, logger, master)
 			@target = ServerController.new(script, logger, target)
+			@current = ServerController.new(script, logger, current)
 		end
 		
 		# The master server controller (where the data is being copied from).
@@ -72,13 +138,16 @@ module LSync
 		
 		# The target server controller (where the data is being copied to).
 		attr :target
+		
+		# The current server controller (the controller for the local machine).
+		attr :current
 	end
 	
 	# The directory controller provides event handlers with a unified interface
 	# for dealing with a particular backup in a particular directory.
 	class DirectoryController < CopyController
-		def initialize(script, logger, master, target, directory)
-			super(script, logger, master, target)
+		def initialize(script, logger, master, target, current, directory)
+			super(script, logger, master, target, current)
 
 			@directory = directory
 		end

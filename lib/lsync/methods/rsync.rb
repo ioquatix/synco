@@ -43,63 +43,64 @@ module LSync
 			
 			def initialize(direction, options = {})
 				super(options)
+
 				@direction = direction
 				@command = options[:command] || "rsync"
-				
+
 				@options = options
 				@connection = nil
 			end
 			
-			def run(master_server, target_server, directory)
+			def run(controller)
+				directory = controller.directory
 				arguments = (@options[:arguments] || ["--archive"]) + (directory.options[:arguments] || [])
 
 				local_server = nil
 				remote_server = nil
 
 				if @direction == :push
-					local_server = master_server
-					remote_server = target_server
+					local_server = controller.master
+					remote_server = controller.target
 
-					dst = remote_server.connection_string(directory)
-					src = local_server.full_path(directory)
+					destination = remote_server.connection_string(directory)
+					source = local_server.full_path(directory)
 				else
-					local_server = target_server
-					remote_server = master_server
+					local_server = controller.target
+					remote_server = controller.master
 
-					src = remote_server.connection_string(directory)
-					dst = local_server.full_path(directory)
+					source = remote_server.connection_string(directory)
+					destination = local_server.full_path(directory)
 				end
 
 				arguments += connect_arguments(local_server, remote_server)
 
 				# Create the destination backup directory
-				@connection = target_server.connect
-				@connection.send_object([:mkdir_p, target_server.full_path(directory)])
+				controller.target.exec!(["mkdir", "-p", controller.target.full_path(directory.path)])
 
-				@logger.info "In directory #{Dir.getwd}..."
+				controller.logger.info "In directory #{Dir.getwd}..."
 				Dir.chdir(local_server.root) do
-					if run_handler(src, dst, arguments) == false
-						raise BackupMethodError.new("Backup from #{src.dump} to #{dst.dump} failed.", :method => self)
+					if run_handler(controller, source, destination, arguments) == false
+						raise BackupMethodError.new("Backup from #{source.dump} to #{destination.dump} failed.", :method => self)
 					end
 				end
 			end
 			
-			def run_handler(src, dst, arguments)
-				run_command([@command] + arguments + [src, dst])
+			def run_handler(controller, source, destination, arguments)
+				run_command(controller, [@command] + arguments + [source, destination])
 			end
 			
-			def should_run?(master_server, current_server, target_server)
+			def should_run?(controller)
 				if @direction == :push
-					return current_server == master_server
+					return controller.current == controller.master
 				elsif @direction == :pull
-					return target_server.is_local?
+					return controller.target.local?
 				else
 					return false
 				end
 			end
 			
-			def run_command(cmd)
-				return LSync.run_command(cmd, @logger) == 0
+			def run_command(controller, command)
+				return LSync.run_command("/", command, controller.logger) == 0
 			end
 		end
 		
@@ -108,40 +109,40 @@ module LSync
 				@options[:inprogress_path] || "backup.inprogress"
 			end
 			
-			def run(master_server, target_server, directory)
+			def run(controller)
+				directory = controller.directory
 				arguments = (@options[:arguments] || []) + (directory.options[:arguments] || [])
 				
 				link_dest = Pathname.new("../" * (directory.path.depth + 1)) + "latest" + directory.path
 				arguments += ['--archive', '--link-dest', link_dest.to_s]
 
-				dst_directory = File.join(inprogress_path, directory.to_s)
+				destination_directory = File.join(inprogress_path, directory.path)
 
 				local_server = nil
 				remote_server = nil
 
 				if @direction == :push
-					local_server = master_server
-					remote_server = target_server
+					local_server = controller.master
+					remote_server = controller.target
 
-					dst = remote_server.connection_string(dst_directory)
-					src = local_server.full_path(directory)
+					destination = remote_server.connection_string(destination_directory)
+					source = local_server.full_path(directory)
 				else
-					local_server = target_server
-					remote_server = master_server
+					local_server = controller.target
+					remote_server = controller.master
 
-					dst = local_server.full_path(dst_directory)
-					src = remote_server.connection_string(directory)
+					destination = local_server.full_path(destination_directory)
+					source = remote_server.connection_string(directory)
 				end
 
 				arguments += connect_arguments(local_server, remote_server)
 
 				# Create the destination backup directory
-				@connection = target_server.connect
-				@connection.send_object([:mkdir_p, target_server.full_path(dst_directory)])
+				controller.target.exec!(["mkdir", "-p", controller.target.full_path(destination_directory)])
 
 				Dir.chdir(local_server.root) do
-					if run_handler(src, dst, arguments) == false
-						raise BackupMethodError.new("Backup from #{src.dump} to #{dst.dump} failed.", :method => self)
+					if run_handler(controller, source, destination, arguments) == false
+						raise BackupMethodError.new("Backup from #{source.dump} to #{destination.dump} failed.", :method => self)
 					end
 				end
 			end

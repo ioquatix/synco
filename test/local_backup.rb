@@ -29,8 +29,8 @@ $script = LSync::Script.new do |script|
 		
 		# Runs after all directories have been successfully backed up.
 		server.on(:success) do
-			target.run :prune, "--default-policy"
-			target.run :rotate, script.method.inprogress_path
+			target.run ["lsync-rotate", script.method.inprogress_path]
+			target.run ["lsync-prune", "--default-policy"]
 		end
 	end
 	

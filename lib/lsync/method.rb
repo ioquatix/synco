@@ -30,15 +30,12 @@ module LSync
 		include EventHandler
 		
 		def initialize(options = {})
-			@logger = options[:logger] || Logger.new(STDOUT)
 		end
 
-		attr :logger, true
-
-		def run(master_server, target_server, directory)
+		def run(controller)
 		end
 
-		def should_run?(master_server, current_server, target_server)
+		def should_run?(controller)
 		end
 	end
 	

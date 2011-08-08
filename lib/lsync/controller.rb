@@ -64,13 +64,25 @@ module LSync
 					data = command[0]
 					
 					command = command.dup
-					command[0] = "script"
+					
+					# Descriptive name can be provided by options[:script].
+					case options[:script]
+					when String
+						command[0] = options[:script]
+					else
+						command[0] = "script"
+					end
+					
+					@logger.info "Running script #{command.inspect} on #{@server}"
 					
 					connection.send_object([:script, command, data])
 				elsif options[:remote]
+					@logger.info "Running script #{command.inspect} on #{@server}"
+					
 					data = File.read(command[0])
 					connection.send_object([:script, command, data])
 				else
+					@logger.info "Running command #{command.inspect} on #{@server}"
 					connection.send_object([:exec, command])
 				end
 				
@@ -93,7 +105,7 @@ module LSync
 				command = @server.shell.connection_command(@server) + ["--"] + command
 			end
 
-			puts "command: #{command.inspect}"
+			@logger.debug "Executing #{command.inspect} on #{@server}"
 			RExec::Task.open(command, options, &block)
 		end
 

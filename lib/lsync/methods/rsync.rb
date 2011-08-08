@@ -80,7 +80,7 @@ module LSync
 				controller.logger.info "In directory #{Dir.getwd}..."
 				Dir.chdir(local_server.root) do
 					if run_handler(controller, source, destination, arguments) == false
-						raise BackupMethodError.new("Backup from #{source.dump} to #{destination.dump} failed.", :method => self)
+						raise BackupMethodError.new("Backup from #{source} to #{destination} failed.", :method => self)
 					end
 				end
 			end
@@ -142,7 +142,7 @@ module LSync
 
 				Dir.chdir(local_server.root) do
 					if run_handler(controller, source, destination, arguments) == false
-						raise BackupMethodError.new("Backup from #{source.dump} to #{destination.dump} failed.", :method => self)
+						raise BackupMethodError.new("Backup from #{source} to #{destination} failed.", :method => self)
 					end
 				end
 			end

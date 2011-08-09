@@ -151,6 +151,8 @@ module LSync
 		def run!(options = {})
 			start_time = Time.now
 
+			logger.info "===== Starting backup at #{start_time} ====="
+
 			# We buffer the log data so that if there is an error it is available to the notification sub-system
 			@log = StringIO.new
 			local_logger = Logger.new(@log)
@@ -178,8 +180,8 @@ module LSync
 			end
 
 			end_time = Time.now
-			logger.info "===== Finished ====="
 			logger.info "[Time]: (#{end_time - start_time}s)."
+			logger.info "===== Finished backup at #{end_time} ====="
 		end
 
 		protected

@@ -45,7 +45,7 @@ class TestSync < Test::Unit::TestCase
 	end
 
 	def test_sync
-		RExec::Task.open(['ruby', 'local_sync.rb', @master, @copy]) do |task|
+		RExec::Task.open(['ruby', 'local_sync.rb', @master, @copy], :passthrough => :all) do |task|
 			task.wait
 		end
 		
@@ -71,7 +71,7 @@ class TestBackup < Test::Unit::TestCase
 	end
 
 	def test_sync
-		RExec::Task.open(['ruby', 'local_backup.rb', @master, @copy]) do |task|
+		RExec::Task.open(['ruby', 'local_backup.rb', @master, @copy], :passthrough => :all) do |task|
 			task.wait
 		end
 		

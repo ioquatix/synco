@@ -15,7 +15,7 @@ Dir.chdir("../") do
 		s.executables += FileList["bin/*"].gsub("bin/", "")
 
 		s.add_dependency("fingerprint", ">= 1.2.3")
-		s.add_dependency("rexec", ">= 1.4.0")
+		s.add_dependency("rexec", ">= 1.4.1")
 
 		s.has_rdoc = "yard"
 	end

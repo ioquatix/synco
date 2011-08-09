@@ -58,7 +58,7 @@ module LSync
 			@start_time ||= time
 			diff = time - @start_time
 			
-			"[T+#{sprintf('%0.1f', diff).ljust(5)} #{severity.rjust(5)}] #{msg}\n"
+			"[T+#{sprintf('%0.1f', diff).ljust(6)} #{severity.rjust(5)}] #{msg}\n"
 		end
 	end
 end

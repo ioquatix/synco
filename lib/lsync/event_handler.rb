@@ -42,7 +42,7 @@ module LSync
 					handled = true
 
 					if scope
-						scope.instance_eval &handler
+						scope.instance_exec *args, &handler
 					else
 						handler.call
 					end

@@ -33,17 +33,26 @@ require 'fileutils'
 require 'optparse'
 
 require 'open-uri'
+require 'lockfile'
 
 module LSync
-	
+
+	# Run a prepared backup script using a lockfile.
 	def self.run_script(options = {}, &block)
 		script = LSync::Script.new(options, &block)
-		
+		lockfile_path = $0 + ".lock"
+
 		script.on(:failure) do |error|
 			LSync::log_error(error, logger)
 		end
 		
-		script.run!
+		begin
+			Lockfile.new(lockfile_path, :retries => 0) do
+				script.run!
+			end
+		rescue Lockfile::MaxTriesLockError
+			raise LockError.new("Lockfile #{lockfile_path} could not be acquired.")
+		end
 	end
 	
 end

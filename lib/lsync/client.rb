@@ -28,29 +28,40 @@ $connection.run do |object|
 		Dir.chdir(object[1])
 	when :script
 		# [:script, :command, :data]
-		
+		$connection.exceptions = false
+
+		status = 255
+
 		command = object[1]
+		command.collect! { |a| a.to_s }
+
 		script_name = File.basename(command[0])
-		
+
 		local_path = `mktemp -t #{script_name.gsub(/[^a-z]/i, '')}.XXXX`.chomp
-		
+
 		File.open(local_path, 'w') { |fp| fp.write(object[2]) }
 		system('chmod', '+x', local_path)
-		
+
 		pid = fork do
 			command[0] = local_path
 			exec *command
 		end
-		
+
 		# Clean up the script after execution:
 		pid, result = Process.wait2(pid)
-		# system('rm', '-f', local_path)
-		
-		exit!(result.exitstatus)
+		status = result.exitstatus
+		system('rm', '-f', local_path)
+
+		exit!(status)
 	when :exec
 		# [:exec, :command]
+		$connection.exceptions = false
+
 		command = object[1]
-		
+
 		exec *command
+
+		# If the above command failed, the exit status is 255
+		exit!(255)
 	end
 end

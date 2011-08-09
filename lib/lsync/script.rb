@@ -52,33 +52,49 @@ module LSync
 		end
 
 		# Given a name, find out which server config matches it
-		def find_named_server name
+		def find_named_server(name)
 			if @servers.key? name
 				return @servers[name]
 			else
 				hostname = Socket.gethostbyname(name)[0] rescue name
 				return @servers.values.find { |s| s.host == hostname }
 			end
+			
+			# No server was found for this name
+			return nil
 		end
 
 		alias :[] :find_named_server
 
 		# Find the master server based on the name #master= specified
 		def find_master_server
-			find_named_server(@master)
+			server = find_named_server(@master)
+			
+			# At this point we must know the current server or we can't continue
+			if server == nil
+				raise ScriptError.new("Could not determine master server!", :script => self, :name => @master)
+			end
+			
+			return server
 		end
 
-		# Find out the config section for the current server
+		# Find the server that matches the current machine
 		def find_current_server
 			master = find_master_server
 			server = nil
 
-			# Find out if the master server is local...
-			if master && master.local?
+			# There might be the case that the the local machine is both the master server and the backup server..
+			# thus we check first if the master server is the local machine:
+			if master.local?
 				server = master
 			else
 				# Find a server config that specifies the local host
 				server = @servers.values.find { |s| s.local? }
+			end
+
+			# At this point we must know the current server or we can't continue
+			if server == nil
+				raise ScriptError.new("Could not determine current server!", :script => self)
 			end
 
 			return server
@@ -144,11 +160,6 @@ module LSync
 			master = find_master_server
 			current = find_current_server
 
-			# At this point we must know the current server or we can't continue
-			if current == nil
-				raise ScriptError.new("Could not determine current server!", :script => self, :master => @master)
-			end
-
 			if master.local?
 				logger.info "We are the master server..."
 			else
@@ -158,8 +169,8 @@ module LSync
 
 			master_controller = ServerController.new(self, logger, master)
 
-			self.try do
-				method.try do
+			self.try(master_controller) do
+				method.try(master_controller) do
 					logger.info "Running backups for server #{current}..."
 
 					run_backups!(master, current, logger, options)

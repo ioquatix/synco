@@ -91,6 +91,10 @@ module LSync
 				connection, task = @server.shell.connect(@server)
 				connection.send_object([:chdir, root])
 				
+				# Convert all arguments to strings for execution.
+				# For some reason, the parent process hangs if you don't have this.. need to investigate further.
+				command = command.collect{|arg| arg.to_s}
+				
 				if options[:script]
 					data = command[0]
 					
@@ -104,16 +108,16 @@ module LSync
 						command[0] = "script"
 					end
 					
-					@logger.info "Running script #{command.inspect} on #{@server}"
+					@logger.info "Running script #{command.to_cmd} on #{@server}"
 					
 					connection.send_object([:script, command, data])
 				elsif options[:remote]
-					@logger.info "Running script #{command.inspect} on #{@server}"
+					@logger.info "Running script #{command.to_cmd} on #{@server}"
 					
 					data = File.read(command[0])
 					connection.send_object([:script, command, data])
 				else
-					@logger.info "Running command #{command.inspect} on #{@server}"
+					@logger.info "Running command #{command.to_cmd} on #{@server}"
 					connection.send_object([:exec, command])
 				end
 				
@@ -124,8 +128,12 @@ module LSync
 				end
 			ensure
 				if task
-					task.stop
-					task.wait
+					# task.stop
+					result = task.wait
+					
+					unless result.exitstatus == 0
+						raise CommandFailure.new(command, result.exitstatus)
+					end
 				end
 			end
 		end
@@ -136,7 +144,7 @@ module LSync
 				command = @server.shell.connection_command(@server) + ["--"] + command
 			end
 
-			@logger.debug "Executing #{command.inspect} on #{@server}"
+			@logger.info "Executing #{command.to_cmd} on #{@server}"
 			RExec::Task.open(command, options, &block)
 		end
 
@@ -147,7 +155,7 @@ module LSync
 				result = task.wait
 
 				unless result.exitstatus == 0
-					raise ShellScriptError.new("Command #{command.inspect} failed: #{result.exitstatus}", result.exitstatus)
+					raise CommandFailure.new(command, result.exitstatus)
 				end
 
 				return task.output.read

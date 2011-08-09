@@ -44,9 +44,9 @@ module LSync
 	end
 
 	# Indicates that a backup action shell script has failed.
-	class ShellScriptError < Error
-		def initialize(script, return_code)
-			super("Shell script #{script} failed", :return_code => return_code)
+	class CommandFailure < Error
+		def initialize(command, status)
+			super("Command #{command.inspect} failed with exit status #{status}", :command => command, :status => status)
 		end
 	end
 end

@@ -39,6 +39,10 @@ module LSync
 	def self.run_script(options = {}, &block)
 		script = LSync::Script.new(options, &block)
 		
+		script.on(:failure) do |error|
+			LSync::log_error(error, logger)
+		end
+		
 		script.run!
 	end
 	

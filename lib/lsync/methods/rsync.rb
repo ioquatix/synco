@@ -23,8 +23,42 @@ require 'lsync/method'
 module LSync
 	module Methods
 		
+		# RSync Exit Codes as of 2011:
+		
+		# 0      Success
+		# 1      Syntax or usage error
+		# 2      Protocol incompatibility
+		# 3      Errors selecting input/output files, dirs
+		# 4      Requested  action not supported: an attempt was made to manipulate 64-bit files on a platform 
+		#        that cannot support them; or an option was specified that is supported by the client and not by the server.
+		# 5      Error starting client-server protocol
+		# 6      Daemon unable to append to log-file
+		# 10     Error in socket I/O
+		# 11     Error in file I/O
+		# 12     Error in rsync protocol data stream
+		# 13     Errors with program diagnostics
+		# 14     Error in IPC code
+		# 20     Received SIGUSR1 or SIGINT
+		# 21     Some error returned by waitpid()
+		# 22     Error allocating core memory buffers
+		# 23     Partial transfer due to error
+		# 24     Partial transfer due to vanished source files
+		# 25     The --max-delete limit stopped deletions
+		# 30     Timeout in data send/receive
+		# 35     Timeout waiting for daemon connection
+		
 		class RSync < Method
-			protected
+			def initialize(direction, options = {})
+				super(options)
+
+				@direction = direction
+				@command = options[:command] || "rsync"
+
+				@options = options
+				@connection = nil
+			end
+			
+		protected
 			
 			def connect_arguments (local_server, remote_server)
 				# RSync -e option simply appends the hostname. There is no way to control this behaviour.
@@ -39,54 +73,58 @@ module LSync
 				return ['-e', command.to_cmd]
 			end
 
-			public
-			
-			def initialize(direction, options = {})
-				super(options)
-
-				@direction = direction
-				@command = options[:command] || "rsync"
-
-				@options = options
-				@connection = nil
-			end
-			
-			def run(controller)
-				directory = controller.directory
-				arguments = (@options[:arguments] || ["--archive"]) + (directory.options[:arguments] || [])
-
+			def configuration(controller, source_directory, destination_directory)
 				local_server = nil
 				remote_server = nil
+				source = nil
+				destination = nil
 
 				if @direction == :push
 					local_server = controller.master
 					remote_server = controller.target
 
-					destination = remote_server.connection_string(directory)
-					source = local_server.full_path(directory)
+					destination = remote_server.connection_string(destination_directory)
+					source = local_server.full_path(source_directory)
 				else
 					local_server = controller.target
 					remote_server = controller.master
 
-					source = remote_server.connection_string(directory)
-					destination = local_server.full_path(directory)
+					source = remote_server.connection_string(source_directory)
+					destination = local_server.full_path(destination_directory)
 				end
+				
+				return local_server, remote_server, source, destination
+			end
+			
+		public
+			
+			def run(controller)
+				directory = controller.directory
+				arguments = (@options[:arguments] || ["--archive"]) + (directory.options[:arguments] || [])
+
+				local_server, remote_server, source, destination = configuration(controller, controller.directory, controller.directory)
 
 				arguments += connect_arguments(local_server, remote_server)
 
 				# Create the destination backup directory
 				controller.target.exec!(["mkdir", "-p", controller.target.full_path(directory.path)])
 
-				controller.logger.info "In directory #{Dir.getwd}..."
-				Dir.chdir(local_server.root) do
-					if run_handler(controller, source, destination, arguments) == false
+				run_handler(controller, local_server, source, destination, arguments)
+			end
+			
+			def run_handler(controller, local_server, source, destination, arguments)
+				command = [@command] + arguments + [source, destination]
+
+				local_server.exec(command) do |task|
+					LSync::log_task(task, controller.logger)
+
+					result = task.wait
+
+					# Exit status 24 means that some files were deleted between indexing the data and copying it.
+					unless result.exitstatus == 0 || result.exitstatus == 24
 						raise BackupMethodError.new("Backup from #{source} to #{destination} failed.", :method => self)
 					end
 				end
-			end
-			
-			def run_handler(controller, source, destination, arguments)
-				run_command(controller, [@command] + arguments + [source, destination])
 			end
 			
 			def should_run?(controller)
@@ -97,10 +135,6 @@ module LSync
 				else
 					return false
 				end
-			end
-			
-			def run_command(controller, command)
-				return LSync.run_command("/", command, controller.logger) == 0
 			end
 		end
 		
@@ -118,33 +152,14 @@ module LSync
 
 				destination_directory = File.join(inprogress_path, directory.path)
 
-				local_server = nil
-				remote_server = nil
-
-				if @direction == :push
-					local_server = controller.master
-					remote_server = controller.target
-
-					destination = remote_server.connection_string(destination_directory)
-					source = local_server.full_path(directory)
-				else
-					local_server = controller.target
-					remote_server = controller.master
-
-					destination = local_server.full_path(destination_directory)
-					source = remote_server.connection_string(directory)
-				end
+				local_server, remote_server, source, destination = configuration(controller, controller.directory, destination_directory)
 
 				arguments += connect_arguments(local_server, remote_server)
 
 				# Create the destination backup directory
 				controller.target.exec!(["mkdir", "-p", controller.target.full_path(destination_directory)])
 
-				Dir.chdir(local_server.root) do
-					if run_handler(controller, source, destination, arguments) == false
-						raise BackupMethodError.new("Backup from #{source} to #{destination} failed.", :method => self)
-					end
-				end
+				run_handler(controller, local_server, source, destination, arguments)
 			end
 		end
 		

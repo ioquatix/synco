@@ -20,7 +20,6 @@
 
 require 'fileutils'
 require 'pathname'
-require 'lsync/run'
 require 'lsync/event_handler'
 
 module LSync

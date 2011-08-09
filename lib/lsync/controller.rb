@@ -18,7 +18,38 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
+require 'rexec/task'
+
 module LSync
+	
+	def self.log_task(task, logger)
+		pipes = [task.output, task.error]
+
+		while pipes.size > 0
+			result = IO.select(pipes)
+
+			result[0].each do |pipe|
+				if pipe.closed? || pipe.eof?
+					pipes.delete(pipe)
+					next
+				end
+
+				if pipe == task.output
+					logger.info pipe.readline.chomp
+				elsif pipe == task.error
+					logger.error pipe.readline.chomp
+				end
+			end
+		end
+	end
+	
+	def self.log_error(error, logger)
+		logger.error "Error #{error.class.name}: #{error}"
+		error.backtrace.each do |where|
+			logger.error "\t#{where}"
+		end
+	end
+	
 	class BasicController
 		def initialize(script, logger)
 			@script = script

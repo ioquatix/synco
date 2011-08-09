@@ -15,7 +15,17 @@ end
 # $growl = Growl.new "localhost", "LSync", ["Backup Status"]
 # $growl.register
 
-$script = LSync::Script.new do |script|
+$stdout.sync = true
+$stderr.sync = true
+
+FAILURE_SCRIPT = <<EOF
+#!/usr/bin/env ruby
+
+exit 1
+
+EOF
+
+LSync::run_script do |script|
 	script.method = LSync::Methods::RSyncSnapshot.new(:push, :arguments => ["--archive", "--compress", "--stats"])
 	
 	script.master = :src
@@ -53,5 +63,3 @@ $script = LSync::Script.new do |script|
 	
 	backup('./')
 end
-
-$script.run!

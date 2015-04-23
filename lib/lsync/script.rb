@@ -172,10 +172,13 @@ module LSync
 			master_controller = ServerController.new(self, logger, master)
 
 			self.try(master_controller) do
-				method.try(master_controller) do
-					logger.info "Running backups for server #{current}..."
+				# This allows events to run on the master server if specified, before running any backups.
+				master.try(master_controller) do
+					method.try(master_controller) do
+						logger.info "Running backups for server #{current}..."
 
-					run_backups!(master, current, logger, options)
+						run_backups!(master, current, logger, options)
+					end
 				end
 			end
 

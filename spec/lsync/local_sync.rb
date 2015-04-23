@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'rubygems'
-
 # You need to have the FSSM gem installed for this to work.
 require 'fssm'
 

@@ -1,7 +1,5 @@
 #!/usr/bin/env ruby
 
-require 'rubygems'
-
 require 'lsync'
 require 'lsync/shells/ssh'
 require 'lsync/methods/rsync'

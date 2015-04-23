@@ -17,13 +17,13 @@ Gem::Specification.new do |spec|
 	spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
 	spec.require_paths = ["lib"]
 
-	s.add_dependency("fingerprint", ">= 1.2.4")
-	s.add_dependency("rexec", ">= 1.4.1")
-	s.add_dependency("lockfile")
+	spec.add_dependency("fingerprint", ">= 1.2.4")
+	spec.add_dependency("rexec", ">= 1.4.1")
+	spec.add_dependency("lockfile")
 
-	s.has_rdoc = "yard"
+	spec.has_rdoc = "yard"
 
 	spec.add_development_dependency "bundler", "~> 1.6"
-    spec.add_development_dependency "rspec", "~> 3.0"
+	spec.add_development_dependency "rspec", "~> 3.0"
 	spec.add_development_dependency "rake"
 end

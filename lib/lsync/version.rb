@@ -19,11 +19,5 @@
 # THE SOFTWARE.
 
 module LSync
-  module VERSION
-    MAJOR = 2
-    MINOR = 3
-    TINY  = 3
-
-    STRING = [MAJOR, MINOR, TINY].join('.')
-  end
+    VERSION = "2.4.0"
 end

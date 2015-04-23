@@ -22,7 +22,6 @@ require 'rexec'
 require 'pathname'
 
 module LSync
-
 	CLIENT_CODE = (Pathname.new(__FILE__).dirname + "client.rb").read
 
 	# There was an error establishing a connection with a server.

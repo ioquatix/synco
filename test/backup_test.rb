@@ -49,11 +49,13 @@ class TestSync < Test::Unit::TestCase
 			task.wait
 		end
 		
-		checker = Fingerprint::check_paths(@master, @copy) do |checksum, path|
-			$stderr.puts "Incorrect checksum #{checksum} for path #{path}"
+		failures = 0
+		checker = Fingerprint::check_paths(@master, @copy) do |record, name, message|
+			failures += 1
+			$stderr.puts "Path #{record.path} different"
 		end
 		
-		assert(checker.failures.size == 0, "File copy failures detected: #{checker.failures.inspect}!")
+		assert_equal failures, 0, "File copy failures detected!"
 	end
 end
 
@@ -75,10 +77,12 @@ class TestBackup < Test::Unit::TestCase
 			task.wait
 		end
 		
-		checker = Fingerprint::check_paths(@master, @copy + "latest") do |checksum, path|
-			$stderr.puts "Incorrect checksum #{checksum} for path #{path}"
+		failures = 0
+		checker = Fingerprint::check_paths(@master, @copy + "latest") do |record, name, message|
+			failures += 1
+			$stderr.puts "Path #{record.path} different"
 		end
 		
-		assert(checker.failures.size == 0, "File copy failures detected: #{checker.failures.inspect}!")
+		assert_equal failures, 0, "File copy failures detected!"
 	end
 end

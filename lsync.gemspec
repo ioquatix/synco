@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
 	spec.require_paths = ["lib"]
 
 	spec.add_dependency("fingerprint", ">= 1.2.4")
-	spec.add_dependency("rexec", ">= 1.4.1")
+	spec.add_dependency("process-group", ">= 1.1.0")
 	spec.add_dependency("lockfile")
 
 	spec.has_rdoc = "yard"

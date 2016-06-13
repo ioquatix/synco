@@ -18,7 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'rexec/task'
+require 'process/group'
+require_relative 'to_cmd'
 
 module LSync
 	
@@ -139,26 +140,36 @@ module LSync
 		end
 
 		# Run a command on the given server using this shell.
-		def exec(command, options = {}, &block)
+		def exec(*command, **options)
 			unless @server.local?
 				command = @server.shell.connection_command(@server) + ["--"] + command
 			end
 
 			@logger.info "Executing #{command.to_cmd} on #{@server}"
-			RExec::Task.open(command, options, &block)
+			
+			process_status = nil
+			
+			Process::Group.wait do |group|
+				group.run(*command.to_cmd, **options) do |status|
+					@logger.info "... finished with exit status #{status}."
+					process_status = status
+				end
+			end
+			
+			return process_status
 		end
 
-		def exec!(command, options = {})
-			exec(command, options) do |task|
-				task.input.close
-
-				result = task.wait
-
-				unless result.exitstatus == 0
-					raise CommandFailure.new(command, result.exitstatus)
-				end
-
-				return task.output.read
+		def exec!(*command, **options)
+			input, output = IO.pipe
+			options[:out] = output
+			
+			status = exec(*command, **options)
+			
+			if status != 0
+				raise CommandFailure.new(command, result.exitstatus)
+			else
+				output.close
+				return input.read
 			end
 		end
 

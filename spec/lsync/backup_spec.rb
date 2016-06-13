@@ -21,7 +21,7 @@
 # THE SOFTWARE.
 
 require 'fingerprint'
-require 'rexec'
+require 'process/group'
 require 'fileutils'
 require 'digest'
 
@@ -50,6 +50,8 @@ module LSync::BackupSpec
 		end
 		
 		before(:each) do
+			@group = Process::Group.new
+			
 			@master = Pathname.new("tmp/master")
 			@copy = Pathname.new("tmp/copy")
 			
@@ -57,6 +59,8 @@ module LSync::BackupSpec
 		end
 		
 		after(:each) do
+			@group.kill(:KILL)
+			
 			FileUtils.rm_rf @master
 			FileUtils.rm_rf @copy
 		end
@@ -64,8 +68,8 @@ module LSync::BackupSpec
 		LOCAL_SYNC_SCRIPT = File.join(__dir__, 'local_sync.rb')
 		
 		it "should synchronize files" do
-			RExec::Task.open(['ruby', LOCAL_SYNC_SCRIPT, @master, @copy], :passthrough => :all) do |task|
-				task.wait
+			@group.wait do
+				@group.run('ruby', LOCAL_SYNC_SCRIPT, @master.to_cmd, @copy.to_cmd)
 			end
 			
 			failures = 0
@@ -81,8 +85,8 @@ module LSync::BackupSpec
 		LOCAL_BACKUP_SCRIPT = File.join(__dir__, 'local_backup.rb')
 		
 		it "should backup files" do
-			RExec::Task.open(['ruby', LOCAL_BACKUP_SCRIPT, @master, @copy], :passthrough => :all) do |task|
-				task.wait
+			@group.wait do
+				@group.run('ruby', LOCAL_BACKUP_SCRIPT, @master.to_cmd, @copy.to_cmd)
 			end
 			
 			failures = 0

@@ -71,72 +71,33 @@ module LSync
 			super(script, logger)
 
 			@server = server
+			@method = method
 
 			@connection = nil
 			@platform = nil
 		end
 
+		def connect
+			@connection ||= @server.connect
+		end
+
 		# The current server.
 		attr :server
+		
+		# The backup method
+		attr :method
 
-		def run(command, options = {})
-			task = nil
-			
+		def run(*command, **options)
 			root ||= options[:root] || @server.root
 			
 			if String === command
 				command = [command]
 			end
 			
-			begin
-				connection, task = @server.shell.connect(@server)
-				connection.send_object([:chdir, root])
-				
-				# Convert all arguments to strings for execution.
-				# For some reason, the parent process hangs if you don't have this.. need to investigate further.
-				command = command.collect{|arg| arg.to_s}
-				
-				if options[:script]
-					data = command[0]
-					
-					command = command.dup
-					
-					# Descriptive name can be provided by options[:script].
-					case options[:script]
-					when String
-						command[0] = options[:script]
-					else
-						command[0] = "script"
-					end
-					
-					@logger.info "Running script #{command.to_cmd} on #{@server}"
-					
-					connection.send_object([:script, command, data])
-				elsif options[:remote]
-					@logger.info "Running script #{command.to_cmd} on #{@server}"
-					
-					data = File.read(command[0])
-					connection.send_object([:script, command, data])
-				else
-					@logger.info "Running command #{command.to_cmd} on #{@server}"
-					connection.send_object([:exec, command])
-				end
-				
-				if block_given?
-					yield task
-				else
-					LSync::log_task(task, @logger)
-				end
-			ensure
-				if task
-					# task.stop
-					result = task.wait
-					
-					unless result.exitstatus == 0
-						raise CommandFailure.new(command, result.exitstatus)
-					end
-				end
-			end
+			lsync = options[:lsync] || "lsync"
+			command = ["lsync", "spawn", "--chdir", root, "--", *command]
+			
+			self.exec(*command, **options)
 		end
 
 		# Run a command on the given server using this shell.
@@ -151,7 +112,7 @@ module LSync
 			
 			Process::Group.wait do |group|
 				group.run(*command.to_cmd, **options) do |status|
-					@logger.info "... finished with exit status #{status}."
+					@logger.info "... finished #{status}."
 					process_status = status
 				end
 			end

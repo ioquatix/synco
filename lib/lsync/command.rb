@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,38 +18,41 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'yaml'
-require 'socket'
-require 'set'
-require 'logger'
+# This script takes a given path, and renames it with the given format. 
+# It then ensures that there is a symlink called "latest" that points 
+# to the renamed directory.
 
-require 'lsync/version'
-require 'lsync/script'
-require 'lsync/context'
+require 'samovar'
 
-require 'fileutils'
-require 'optparse'
-
-require 'lockfile'
+require_relative 'command/spawn'
 
 module LSync
-
-	# Run a prepared backup script using a lockfile.
-	def self.run_script(**options, &block)
-		script = LSync::Script.new(options, &block)
-		lockfile_path = $0 + ".lock"
-
-		script.on(:failure) do |error|
-			LSync::log_error(error, logger)
-		end
-		
-		begin
-			Lockfile.new(lockfile_path, :retries => 0) do
-				Context.new(script).run!
+	module Command
+		class Top < Samovar::Command
+			self.description = "A backup and synchronizatio tool."
+			
+			options do
+				option '--verbose | --quiet', "Verbosity of output for debugging.", key: :logging
+				option '-h/--help', "Print out help information."
+				option '-v/--version', "Print out the application version."
 			end
-		rescue Lockfile::MaxTriesLockError
-			raise LockError.new("Lockfile #{lockfile_path} could not be acquired.")
+			
+			nested '<command>',
+				'spawn' => Spawn
+				#'rotate' => Rotate,
+				#'prune' => Prune,
+			
+			def invoke(program_name: File.basename($0))
+				if @options[:version]
+					puts "lsync v#{Teapot::VERSION}"
+				elsif @options[:help] or @command.nil?
+					print_usage(program_name)
+				else
+					track_time do
+						@command.invoke(self)
+					end
+				end
+			end
 		end
 	end
-	
 end

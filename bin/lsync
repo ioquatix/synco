@@ -1,4 +1,6 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+#!/usr/bin/env ruby
+
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,50 +20,11 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'pathname'
-require 'fileutils'
+# This script takes a given path, and renames it with the given format. 
+# It then ensures that there is a symlink called "latest" that points 
+# to the renamed directory.
 
-$connection.run do |object|
-	case(object[0])
-	when :chdir
-		# [:chdir, :path]
-		Dir.chdir(object[1])
-	when :script
-		# [:script, :command, :data]
-		$connection.exceptions = false
+require 'lsync/command'
 
-		status = 255
-
-		command = object[1]
-		command.collect! { |a| a.to_s }
-
-		script_name = File.basename(command[0])
-
-		local_path = `mktemp -t #{script_name.gsub(/[^a-z]/i, '')}.XXXX`.chomp
-
-		File.open(local_path, 'w') { |fp| fp.write(object[2]) }
-		system('chmod', '+x', local_path)
-
-		pid = fork do
-			command[0] = local_path
-			exec *command
-		end
-
-		# Clean up the script after execution:
-		pid, result = Process.wait2(pid)
-		status = result.exitstatus
-		system('rm', '-f', local_path)
-
-		exit!(status)
-	when :exec
-		# [:exec, :command]
-		$connection.exceptions = false
-
-		command = object[1]
-
-		exec *command
-
-		# If the above command failed, the exit status is 255
-		exit!(255)
-	end
-end
+application = LSync::Command::Top.new(ARGV)
+application.invoke

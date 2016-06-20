@@ -18,10 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'lsync/method'
-require 'lsync/server'
-require 'lsync/directory'
-require 'lsync/controller'
+require_relative 'method'
+require_relative 'server'
+require_relative 'directory'
+require_relative 'controller'
+
+require 'process/group'
 
 module LSync
 	# The main backup/synchronisation mechanism is the backup script. It specifies all
@@ -30,12 +32,11 @@ module LSync
 	class Script
 		include EventHandler
 
-		def initialize(options = {}, &block)
+		def initialize(**options, &block)
 			if options[:logger]
 				@logger = options[:logger]
 			else
-				@logger = Logger.new($stdout)
-				@logger.formatter = LSync::MinimalLogFormat.new
+				@logger = Logger.new($stderr)
 			end
 			
 			@method = nil
@@ -43,8 +44,6 @@ module LSync
 			@servers = {}
 			@directories = []
 			@master = "localhost"
-
-			@log = nil
 
 			if block_given?
 				instance_eval &block
@@ -135,7 +134,7 @@ module LSync
 		# The master server name (e.g. symbolic or host name)
 		attr :master, true
 
-		# A specific method which will perform the backup (e.g. an isntance of LSync::Method)
+		# A specific method which will perform the backup (e.g. an instance of LSync::Method)
 		attr :method, true
 
 		# All servers which are participating in the backup process.
@@ -143,86 +142,5 @@ module LSync
 
 		# All directories which may be synchronised.
 		attr :directories
-
-		# Log data (an +IO+) specific to the current script.
-		attr :log
-
-		# Run the backup process for all servers and directories specified.
-		def run!(options = {})
-			start_time = Time.now
-
-			logger.info "===== Starting backup at #{start_time} ====="
-
-			# We buffer the log data so that if there is an error it is available to the notification sub-system
-			@log = StringIO.new
-			local_logger = Logger.new(@log)
-			local_logger.formatter = MinimalLogFormat.new
-			logger = @logger.tee(local_logger)
-
-			master = find_master_server
-			current = find_current_server
-
-			if master.local?
-				logger.info "We are the master server..."
-			else
-				logger.info "We are not the master server..."
-				logger.info "Master server is #{@master}..."
-			end
-
-			master_controller = ServerController.new(self, logger, master)
-
-			self.try(master_controller) do
-				# This allows events to run on the master server if specified, before running any backups.
-				master.try(master_controller) do
-					method.try(master_controller) do
-						logger.info "Running backups for server #{current}..."
-
-						run_backups!(master, current, logger, options)
-					end
-				end
-			end
-
-			end_time = Time.now
-			logger.info "[Time]: (#{end_time - start_time}s)."
-			logger.info "===== Finished backup at #{end_time} ====="
-		end
-
-		protected
-
-		# This function runs the method for each directory and server combination specified.
-		def run_backups!(master, current, logger, options = {})
-			@servers.each do |name, server|
-				# S is always a data destination, therefore s can't be @master
-				next if server == master
-
-				next unless server.role?(options[:role] || :any)
-
-				server_controller = CopyController.new(self, logger, master, server, current)
-
-				# Skip servers that shouldn't be processed
-				unless @method.should_run?(server_controller)
-					logger.info "===== Skipping ====="
-					logger.info "[Master]: #{master}"
-					logger.info "[Target]: #{server}"
-					next
-				end
-
-				logger.info "===== Processing ====="
-				logger.info "[Master]: #{master}"
-				logger.info "[Target]: #{server}"
-				
-				server.try(server_controller) do
-					@directories.each do |directory|
-						directory_controller = DirectoryController.new(self, logger, master, server, current, directory)
-
-						logger.info "[Directory]: #{directory}"
-						directory.try(directory_controller) do
-							method.run(directory_controller)
-						end
-					end
-				end
-			end
-		end
 	end
-
 end

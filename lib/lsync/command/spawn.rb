@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,38 +18,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'yaml'
-require 'socket'
-require 'set'
-require 'logger'
+# This script takes a given path, and renames it with the given format. 
+# It then ensures that there is a symlink called "latest" that points 
+# to the renamed directory.
 
-require 'lsync/version'
-require 'lsync/script'
-require 'lsync/context'
-
-require 'fileutils'
-require 'optparse'
-
-require 'lockfile'
+require 'samovar'
 
 module LSync
-
-	# Run a prepared backup script using a lockfile.
-	def self.run_script(**options, &block)
-		script = LSync::Script.new(options, &block)
-		lockfile_path = $0 + ".lock"
-
-		script.on(:failure) do |error|
-			LSync::log_error(error, logger)
-		end
-		
-		begin
-			Lockfile.new(lockfile_path, :retries => 0) do
-				Context.new(script).run!
-			end
-		rescue Lockfile::MaxTriesLockError
-			raise LockError.new("Lockfile #{lockfile_path} could not be acquired.")
+	module Command
+		class Spawn < Samovar::Command
+				options do
+						option '-d/--chdir <path>', "Change the directory before executing the script."
+				end
+				
+				split :argv, "Command to spawn."
+				
+				def invoke(parent, program_name: File.basename($0))
+					if directory = @options[:chdir]
+						Dir.chdir(directory)
+					end
+					
+					Process.exec(*@argv)
+				end
 		end
 	end
-	
 end

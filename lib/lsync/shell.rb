@@ -21,41 +21,16 @@
 require 'pathname'
 
 module LSync
-	CLIENT_CODE = (Pathname.new(__FILE__).dirname + "client.rb").read
-
-	# There was an error establishing a connection with a server.
-	class ConnectionError < StandardError
-	end
-	
 	# A shell provides access to a server, typically to run an instance of `ruby`.
 	class Shell
-		def initialize(command, options = {})
-			case command
-			when Array
-				@command = command
-			else
-				@command = [command]
-			end
-			
+		def initialize(*command, **options)
+			@command = command
 			@options = options
-		end
-		
-		def ruby_command
-			@options[:ruby] || ["ruby"]
 		end
 		
 		# The command required to connect to the remote machine.
 		def connection_command(server, arguments = [])
-			@command + (@options[:arguments] || []) + arguments + [server.host]
-		end
-		
-		def connect(server)
-			options = {:passthrough => []}
-			if server.local?
-				return RExec::start_server(CLIENT_CODE, ruby_command, options)
-			else
-				return RExec::start_server(CLIENT_CODE, connection_command(server) + ruby_command, options)
-			end
+			@command + arguments + [server.host]
 		end
 	end
 end

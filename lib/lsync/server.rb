@@ -70,7 +70,15 @@ module LSync
 				return @host + ":" + full_path(directory).to_cmd
 			end
 		end
-
+		
+		def connect
+			connection = self.shell.connect(self)
+			
+			connection.exec("cd", self.root)
+			
+			return connection
+		end
+		
 		def role?(role)
 			@roles.include?(role) || @roles.include?(:all) || role == :any
 		end

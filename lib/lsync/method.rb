@@ -23,19 +23,20 @@ require 'pathname'
 require 'lsync/event_handler'
 
 module LSync
-	
 	# A backup method provides the interface to copy data from one system to another.
 	class Method
 		include EventHandler
 		
-		def initialize(options = {})
+		def initialize(**options)
+			@options = options
 		end
-
+		
+		attr :options
+		
 		def run(controller)
 		end
-
+		
 		def should_run?(controller)
 		end
 	end
-	
 end

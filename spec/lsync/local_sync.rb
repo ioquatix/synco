@@ -16,7 +16,7 @@ unless ARGV.size == 2
 	exit(255)
 end
 
-$script = LSync::Script.new do |script|
+script = LSync::Script.new do |script|
 	script.method = LSync::Methods::RSync.new(:push, :arguments => ["--archive", "--delete"])
 	
 	script.master = :src
@@ -57,7 +57,9 @@ $script = LSync::Script.new do |script|
 end
 
 # Initial sync:
-$script.run!
+
+context = LSync::Context.new(script)
+context.run!
 
 if MONITOR
 	# Monitor directories for changes:

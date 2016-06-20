@@ -16,13 +16,6 @@ end
 $stdout.sync = true
 $stderr.sync = true
 
-FAILURE_SCRIPT = <<EOF
-#!/usr/bin/env ruby
-
-exit 1
-
-EOF
-
 LSync::run_script do |script|
 	script.method = LSync::Methods::RSyncSnapshot.new(:push, "--archive", "--compress", "--stats")
 	
@@ -37,7 +30,7 @@ LSync::run_script do |script|
 		
 		# Runs after all directories have been successfully backed up.
 		server.on(:success) do
-			target.run "lsync", "rotate", script.method.inprogress_path
+			target.run "lsync", "rotate"
 			target.run "lsync", "prune"
 		end
 	end

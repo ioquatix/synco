@@ -138,8 +138,8 @@ module LSync
 		end
 		
 		class RSyncSnapshot < RSync
-			def inprogress_path
-				@options[:snapshot] || SNAPSHOT_NAME
+			def snapshot_name
+				@options[:snapshot_name] || SNAPSHOT_NAME
 			end
 			
 			def run(controller)
@@ -149,7 +149,7 @@ module LSync
 				link_dest = Pathname.new("../" * (directory.path.depth + 1)) + "latest" + directory.path
 				arguments += ['--archive', '--link-dest', link_dest.to_s]
 
-				destination_directory = File.join(inprogress_path, directory.path)
+				destination_directory = File.join(snapshot_name, directory.path)
 
 				local_server, remote_server, source, destination = configuration(controller, controller.directory, destination_directory)
 

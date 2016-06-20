@@ -95,7 +95,7 @@ module LSync
 			end
 			
 			lsync = options[:lsync] || "lsync"
-			command = ["lsync", "spawn", "--chdir", root, "--", *command]
+			command = ["lsync", "--root", root, "spawn", "--", *command]
 			
 			self.exec(*command, **options)
 		end

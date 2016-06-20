@@ -27,8 +27,10 @@ require 'samovar'
 module LSync
 	module Command
 		class Spawn < Samovar::Command
+				self.description = "Run a command using the lsync environment and root directory."
+				
 				options do
-						option '-d/--chdir <path>', "Change the directory before executing the script."
+					option '-d/--chdir <path>', "Change the directory before executing the script."
 				end
 				
 				split :argv, "Command to spawn."

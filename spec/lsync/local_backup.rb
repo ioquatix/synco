@@ -24,7 +24,7 @@ exit 1
 EOF
 
 LSync::run_script do |script|
-	script.method = LSync::Methods::RSyncSnapshot.new(:push, :arguments => ["--archive", "--compress", "--stats"])
+	script.method = LSync::Methods::RSyncSnapshot.new(:push, "--archive", "--compress", "--stats")
 	
 	script.master = :src
 	
@@ -37,8 +37,8 @@ LSync::run_script do |script|
 		
 		# Runs after all directories have been successfully backed up.
 		server.on(:success) do
-			target.run "lsync-rotate", script.method.inprogress_path
-			target.run "lsync-prune", "--default-policy"
+			target.run "lsync", "rotate", script.method.inprogress_path
+			target.run "lsync", "prune", "--default-policy"
 		end
 	end
 	

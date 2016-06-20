@@ -23,6 +23,11 @@ require 'pathname'
 require 'lsync/event_handler'
 
 module LSync
+	SNAPSHOT_NAME = 'latest.snapshot'
+	LATEST_NAME = 'latest'
+	BACKUP_NAME = '%Y.%m.%d-%H.%M.%S'
+	BACKUP_TIMEZONE = 'UTC'
+	
 	# A backup method provides the interface to copy data from one system to another.
 	class Method
 		include EventHandler

@@ -17,7 +17,8 @@ Gem::Specification.new do |spec|
 	spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
 	spec.require_paths = ["lib"]
 
-	spec.add_dependency("samovar", ">= 1.1.0")
+	spec.add_dependency("periodical", ">= 1.0.0")
+	spec.add_dependency("samovar", ">= 1.1.1")
 	spec.add_dependency("fingerprint", ">= 1.2.4")
 	spec.add_dependency("process-group", ">= 1.1.0")
 	spec.add_dependency("lockfile")

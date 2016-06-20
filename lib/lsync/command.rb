@@ -25,6 +25,8 @@
 require 'samovar'
 
 require_relative 'command/spawn'
+require_relative 'command/rotate'
+require_relative 'command/prune'
 
 module LSync
 	module Command
@@ -32,24 +34,34 @@ module LSync
 			self.description = "A backup and synchronizatio tool."
 			
 			options do
-				option '--verbose | --quiet', "Verbosity of output for debugging.", key: :logging
+				option '--root <path>', "Work in the given root directory."
 				option '-h/--help', "Print out help information."
 				option '-v/--version', "Print out the application version."
 			end
 			
+			def chdir(&block)
+				if root = @options[:root]
+					Dir.chdir(root, &block)
+				else
+					yield
+				end
+			end
+			
 			nested '<command>',
-				'spawn' => Spawn
-				#'rotate' => Rotate,
-				#'prune' => Prune,
+				'spawn' => Spawn,
+				'rotate' => Rotate,
+				'prune' => Prune
 			
 			def invoke(program_name: File.basename($0))
 				if @options[:version]
-					puts "lsync v#{Teapot::VERSION}"
+					puts "lsync v#{LSync::VERSION}"
 				elsif @options[:help] or @command.nil?
 					print_usage(program_name)
 				else
 					track_time do
-						@command.invoke(self)
+						chdir do
+							@command.invoke(self)
+						end
 					end
 				end
 			end

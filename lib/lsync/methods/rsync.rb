@@ -48,13 +48,12 @@ module LSync
 		# 35     Timeout waiting for daemon connection
 		
 		class RSync < Method
-			def initialize(direction, options = {})
+			def initialize(direction, *arguments, **options)
 				super(options)
 
 				@direction = direction
 				@command = options[:command] || "rsync"
 
-				@options = options
 				@connection = nil
 			end
 			
@@ -140,7 +139,7 @@ module LSync
 		
 		class RSyncSnapshot < RSync
 			def inprogress_path
-				@options[:inprogress_path] || "backup.inprogress"
+				@options[:snapshot] || SNAPSHOT_NAME
 			end
 			
 			def run(controller)

@@ -69,7 +69,9 @@ module LSync::BackupSpec
 		
 		it "should synchronize files" do
 			@group.wait do
-				@group.run('ruby', LOCAL_SYNC_SCRIPT, @master.to_cmd, @copy.to_cmd)
+				@group.run('ruby', LOCAL_SYNC_SCRIPT, @master.to_cmd, @copy.to_cmd) do |status|
+					expect(status).to be_success
+				end
 			end
 			
 			failures = 0
@@ -86,7 +88,9 @@ module LSync::BackupSpec
 		
 		it "should backup files" do
 			@group.wait do
-				@group.run('ruby', LOCAL_BACKUP_SCRIPT, @master.to_cmd, @copy.to_cmd)
+				@group.run('ruby', LOCAL_BACKUP_SCRIPT, @master.to_cmd, @copy.to_cmd) do |status|
+					expect(status).to be_success
+				end
 			end
 			
 			failures = 0

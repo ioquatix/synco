@@ -36,15 +36,15 @@ module LSync
 					option "--latest <name>", "The name of the latest backup symlink.", default: LATEST_NAME
 					option "--snapshot <name>", "The name of the in-progres backup snapshot.", default: SNAPSHOT_NAME
 					
-					option "--timezone <name>", "The default timezone for backup timestamps.", default: BACKUP_TIMEZONE
+					# option "--timezone <name>", "The default timezone for backup timestamps.", default: BACKUP_TIMEZONE
 				end
 				
 				def backup_timestamp
-					timestamp = DateTime.now
+					timestamp = Time.now.utc
 					
-					if timezone = @options[:timezone]
-						timestamp = timestamp.in_time_zone(timezone)
-					end
+					#if timezone = @options[:timezone]
+					#	timestamp = timestamp.in_time_zone(timezone)
+					#end
 					
 					return timestamp
 				end

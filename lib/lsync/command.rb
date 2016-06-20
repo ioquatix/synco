@@ -58,10 +58,8 @@ module LSync
 				elsif @options[:help] or @command.nil?
 					print_usage(program_name)
 				else
-					track_time do
-						chdir do
-							@command.invoke(self)
-						end
+					chdir do
+						@command.invoke(self)
 					end
 				end
 			end

@@ -39,10 +39,6 @@ module LSync
 	class ScriptError < Error
 	end
 
-	# Indicates that a backup could not be run because it was already locked.
-	class LockError < Error
-	end
-
 	# Indicates that there has been a major backup method error.
 	class BackupMethodError < Error
 	end

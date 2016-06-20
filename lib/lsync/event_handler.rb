@@ -74,7 +74,7 @@ module LSync
 				end
 			rescue Exception => error
 				# Propagage the exception unless it was handled in some specific way.
-				raise unless fire(:failure, *arguments + [error])
+				raise unless fire(:failure, *arguments, error)
 			ensure
 				fire(:done, *arguments)
 			end

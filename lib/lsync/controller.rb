@@ -97,7 +97,11 @@ module LSync
 			lsync = options[:lsync] || "lsync"
 			command = ["lsync", "--root", root, "spawn", "--", *command]
 			
-			self.exec(*command, **options)
+			result = self.exec(*command, **options)
+			
+			unless result.success?
+				raise CommandFailure.new(command, result.exitstatus)
+			end
 		end
 
 		# Run a command on the given server using this shell.
@@ -124,9 +128,9 @@ module LSync
 			input, output = IO.pipe
 			options[:out] = output
 			
-			status = exec(*command, **options)
+			result = exec(*command, **options)
 			
-			if status != 0
+			if result != 0
 				raise CommandFailure.new(command, result.exitstatus)
 			else
 				output.close

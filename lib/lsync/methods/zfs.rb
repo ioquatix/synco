@@ -23,7 +23,7 @@ require 'lsync/method'
 module LSync
 	module Methods
 		class ZFS < Method
-			def initialize(direction, *arguments, **options)
+			def initialize(direction, **options)
 				super(options)
 
 				@direction = direction
@@ -43,13 +43,13 @@ module LSync
 					local_server = controller.master
 					remote_server = controller.target
 
-					destination = [remote_server.connection_command, @zfs, "recv", remote_server.full_path(destination_directory)]
+					destination = [*remote_server.connection_command, @zfs, "recv", remote_server.full_path(destination_directory)]
 					source = [@zfs, "send", "-rnv", local_server.full_path(source_directory)]
 				else
 					local_server = controller.target
 					remote_server = controller.master
 
-					source = [remote_server.connection_command, @zfs, "send", "-rnv", remote_server.full_path(source_directory)]
+					source = [*remote_server.connection_command, @zfs, "send", "-rnv", remote_server.full_path(source_directory)]
 					destination = [@zfs, "recv", local_server.full_path(destination_directory)]
 				end
 				
@@ -63,11 +63,11 @@ module LSync
 					input, output = IO.pipe
 					
 					group.run(*source.to_cmd, out: output) do |exit_status|
-						raise CommandFailure.new(source) unless exit_status.success?
+						raise CommandFailure.new(source, exit_status) unless exit_status.success?
 					end
 					
 					group.run(*destination.to_cmd, in: input) do |exit_status|
-						raise CommandFailure.new(destination) unless exit_status.success?
+						raise CommandFailure.new(destination, exit_status) unless exit_status.success?
 					end
 				end
 			end

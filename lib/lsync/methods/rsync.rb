@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 require 'lsync/method'
+require 'shellwords'
 
 module LSync
 	module Methods
@@ -68,7 +69,7 @@ module LSync
 					command.pop
 				end
 
-				return ['-e', command.to_cmd]
+				return ['-e', Shellwords.join(command)]
 			end
 
 			def configuration(controller, source_directory, destination_directory)
@@ -97,7 +98,7 @@ module LSync
 			def run_handler(controller, local_server, source, destination, arguments)
 				command = [@rsync] + arguments + [source, destination]
 
-				local_server.exec(command) do |task|
+				local_server.exec(*command) do |task|
 					LSync::log_task(task, controller.logger)
 
 					result = task.wait
@@ -120,7 +121,7 @@ module LSync
 				arguments += connect_arguments(local_server, remote_server)
 
 				# Create the destination backup directory
-				controller.target.exec!(["mkdir", "-p", controller.target.full_path(directory.path)])
+				controller.target.exec!("mkdir", "-p", controller.target.full_path(directory.path))
 
 				run_handler(controller, local_server, source, destination, arguments)
 			end
@@ -155,7 +156,7 @@ module LSync
 				arguments += connect_arguments(local_server, remote_server)
 
 				# Create the destination backup directory
-				controller.target.exec!(["mkdir", "-p", controller.target.full_path(destination_directory)])
+				controller.target.exec!("mkdir", "-p", controller.target.full_path(destination_directory))
 
 				run_handler(controller, local_server, source, destination, arguments)
 			end

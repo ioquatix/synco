@@ -52,17 +52,16 @@ module LSync
 				super(options)
 
 				@direction = direction
-				@command = options[:command] || "rsync"
-
-				@connection = nil
+				@rsync = options[:rsync] || "rsync"
 			end
 			
 		protected
 			
 			def connect_arguments (local_server, remote_server)
-				# RSync -e option simply appends the hostname. There is no way to control this behaviour.
-				command = remote_server.shell.connection_command(remote_server)
+				# This gives the command required to connect to the remote server, e.g. `ssh example.com`
+				command = remote_server.connection_command
 
+				# RSync -e option simply appends the hostname. There is no way to control this behaviour.
 				if command.last != remote_server.host
 					abort "RSync shell requires hostname at end of command! #{cmd.inspect}"
 				else
@@ -95,6 +94,21 @@ module LSync
 				return local_server, remote_server, source, destination
 			end
 			
+			def run_handler(controller, local_server, source, destination, arguments)
+				command = [@rsync] + arguments + [source, destination]
+
+				local_server.exec(command) do |task|
+					LSync::log_task(task, controller.logger)
+
+					result = task.wait
+
+					# Exit status 24 means that some files were deleted between indexing the data and copying it.
+					unless result.exitstatus == 0 || result.exitstatus == 24
+						raise BackupMethodError.new("Backup from #{source} to #{destination} failed.", :method => self)
+					end
+				end
+			end
+			
 		public
 			
 			def run(controller)
@@ -109,21 +123,6 @@ module LSync
 				controller.target.exec!(["mkdir", "-p", controller.target.full_path(directory.path)])
 
 				run_handler(controller, local_server, source, destination, arguments)
-			end
-			
-			def run_handler(controller, local_server, source, destination, arguments)
-				command = [@command] + arguments + [source, destination]
-
-				local_server.exec(command) do |task|
-					LSync::log_task(task, controller.logger)
-
-					result = task.wait
-
-					# Exit status 24 means that some files were deleted between indexing the data and copying it.
-					unless result.exitstatus == 0 || result.exitstatus == 24
-						raise BackupMethodError.new("Backup from #{source} to #{destination} failed.", :method => self)
-					end
-				end
 			end
 			
 			def should_run?(controller)

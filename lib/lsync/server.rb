@@ -36,12 +36,9 @@ module LSync
 			@shell = Shells::SSH.new
 
 			@enabled = true
-
-			@roles = Set.new
 		end
 		
-		# The roles that dictate how the server fits into the overall infratstructure.
-		attr :roles, true
+		attr_accessor :mountpoint
 		
 		# The host name (e.g. DNS entry) for the given server
 		attr :host, true
@@ -71,8 +68,8 @@ module LSync
 			end
 		end
 		
-		def role?(role)
-			@roles.include?(role) || @roles.include?(:all) || role == :any
+		def connection_command
+			@shell.connection_command(self)
 		end
 
 		# Checks if the host resolves to the local machine.

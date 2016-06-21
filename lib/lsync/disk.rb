@@ -1,6 +1,4 @@
-#!/usr/bin/env ruby
-
-# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
+# Copyright, 2007, 2011, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,11 +18,39 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# This script takes a given path, and renames it with the given format. 
-# It then ensures that there is a symlink called "latest" that points 
-# to the renamed directory.
+module LSync
+	module LinuxDisk
+		def self.mount(path, disk_name = nil)
+			if disk_name
+				system("mount", "-L", disk_name, path)
+			else
+				system("mount", path)
+			end
+		end
+		
+		def self.unmount(path)
+			system("umount", path)
+		end
+	end
 
-require 'lsync/command'
-
-application = LSync::Command::Top.new(ARGV)
-application.invoke
+	module DarwinDisk
+		DISKUTIL = "diskutil"
+		
+		def self.mount(path, disk_name = nil)
+			disk_name ||= File.basename(path)
+			
+			system(DISKUTIL, "mount", "-mountPoint", path, disk_name)
+		end
+		
+		def self.unmount(path)
+			system(DISKUTIL, "unmount", path)
+		end
+	end
+	
+	case RUBY_PLATFORM
+	when /darwin/
+		Disk = DarwinDisk
+	when /linux/
+		Disk = LinuxDisk
+	end
+end

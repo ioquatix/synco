@@ -1,6 +1,4 @@
-#!/usr/bin/env ruby
-
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2007, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,69 +18,36 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-module Linux
-	Commands = {
-		"mount" => "mount",
-		"unmount" => "umount"
-	}
+# This script takes a given path, and renames it with the given format. 
+# It then ensures that there is a symlink called "latest" that points 
+# to the renamed directory.
 
-	DevicePaths = [
-		"/dev/disk/by-label",
-		"/dev/disk/by-uuid",
-		"/dev"
-	]
-	
-	def self.run(action, disk_name)
-		action = ARGV[0]
-		disk_name = ARGV[1]
+require 'samovar'
 
-		mountpoint = File.join('', 'mnt', disk_name)
+require_relative '../disk'
 
-		if (action == 'mountpoint')
-			puts File.join(mountpoint, ARGV[2..-1])
-		else
-			puts "#{action.capitalize}ing #{mountpoint}..."
-			system Commands[action], mountpoint
-
-			if $?.exitstatus != 0 or $?.exitstatus != 3383
-				exit 5
+module LSync
+	module Command
+		class Mount < Samovar::Command
+			self.description = "Mount a disk with the given name."
+			
+			one :path, "The disk mount point."
+			one :name, "The symbolic name of the disk to mount, e.g. disk label."
+			
+			def invoke(parent)
+				FileUtils.mkpath(@path)
+				Disk.mount(@path, @name)
+			end
+		end
+		
+		class Unmount < Samovar::Command
+			self.description = "Unmount a disk with the given name."
+			
+			one :path, "The disk mount point."
+			
+			def invoke(parent)
+				Disk.unmount(@path)
 			end
 		end
 	end
-end
-
-module Darwin
-	DISKUTIL = "diskutil"
-
-	def self.get_disk_id(name)
-		begin
-			`diskutil list`.match(/#{name}\s*\*?[0-9]+\.[0-9]+ .B\s+(disk[0-9]s[0-9])$/)[1]
-		rescue
-			exit 5
-		end
-	end
-
-	def self.run
-		action = ARGV[0]
-		disk_name = ARGV[1]
-		
-		if (action == 'mountpoint')
-			puts File.join('', 'Volumes', disk_name, ARGV[2..-1])
-		else
-			system DISKUTIL, action, get_disk_id(disk_name)
-		end
-	end
-end
-
-class UnsupportedPlatformError < StandardError
-end
-
-platform = `uname`.chomp.downcase
-case platform
-when "darwin"
-	Darwin.run
-when "linux"
-	Linux.run
-else
-	raise UnsupportedPlatformError.new("Platform #{platform} not supported.")
 end

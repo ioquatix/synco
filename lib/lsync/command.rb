@@ -27,6 +27,7 @@ require 'samovar'
 require_relative 'command/spawn'
 require_relative 'command/rotate'
 require_relative 'command/prune'
+require_relative 'command/disk'
 
 module LSync
 	module Command
@@ -50,7 +51,9 @@ module LSync
 			nested '<command>',
 				'spawn' => Spawn,
 				'rotate' => Rotate,
-				'prune' => Prune
+				'prune' => Prune,
+				'mount' => Mount,
+				'unmount' => Unmount
 			
 			def invoke(program_name: File.basename($0))
 				if @options[:version]

@@ -29,17 +29,9 @@ module LSync
 		class Spawn < Samovar::Command
 				self.description = "Run a command using the lsync environment and root directory."
 				
-				options do
-					option '-d/--chdir <path>', "Change the directory before executing the script."
-				end
-				
 				split :argv, "Command to spawn."
 				
-				def invoke(parent, program_name: File.basename($0))
-					if directory = @options[:chdir]
-						Dir.chdir(directory)
-					end
-					
+				def invoke(parent)
 					Process.exec(*@argv)
 				end
 		end

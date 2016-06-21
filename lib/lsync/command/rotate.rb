@@ -53,7 +53,7 @@ module LSync
 					backup_timestamp.strftime(@options[:format])
 				end
 				
-				def invoke(parent, program_name: File.basename($0))
+				def invoke(parent)
 					snapshot_name = @options[:snapshot]
 					unless File.exist? snapshot_name
 						$stderr.puts "Snapshot directory #{snapshot_name} does not exist!"

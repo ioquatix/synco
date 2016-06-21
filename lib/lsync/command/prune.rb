@@ -140,7 +140,7 @@ module LSync
 				end
 			end
 			
-			def invoke(parent, program_name: File.basename($0))
+			def invoke(parent)
 				backups = current_backups
 				
 				retain, erase = policy.filter(backups, keep: @options[:keep].to_sym, &:time)

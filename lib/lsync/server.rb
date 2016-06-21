@@ -21,6 +21,8 @@
 require 'lsync/event_handler'
 require 'lsync/shells/ssh'
 
+require 'shellwords'
+
 module LSync
 	class Server
 		include EventHandler
@@ -64,7 +66,7 @@ module LSync
 			if local?
 				return full_path(directory)
 			else
-				return @host + ":" + full_path(directory).to_cmd
+				return @host + ":" + Shellwords.escape(full_path(directory))
 			end
 		end
 		

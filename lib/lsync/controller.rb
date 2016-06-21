@@ -19,7 +19,6 @@
 # THE SOFTWARE.
 
 require 'process/group'
-require_relative 'to_cmd'
 
 module LSync
 	
@@ -75,6 +74,8 @@ module LSync
 
 			@connection = nil
 			@platform = nil
+			
+			@arguments_mapping = ArgumentsMapping.new
 		end
 
 		def connect
@@ -110,12 +111,12 @@ module LSync
 				command = @server.shell.connection_command(@server) + ["--"] + command
 			end
 
-			@logger.info "Executing #{command.to_cmd} on #{@server}"
+			@logger.info "#{command.inspect} (on #{@server})"
 			
 			process_status = nil
 			
 			Process::Group.wait do |group|
-				group.run(*command.to_cmd, **options) do |status|
+				group.run(*Arguments[command], **options) do |status|
 					@logger.info "... finished #{status}."
 					process_status = status
 				end

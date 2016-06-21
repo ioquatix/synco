@@ -64,6 +64,18 @@ A simple backup script might look something like this:
 		backup('etc', 'var', 'srv', 'home')
 	end
 
+### ZFS Snapshots
+
+*This part of LSync is still under heavy development*
+
+LSync can manage synchronization and backups of ZFS partitions. However, to use the standard tools, it is necessary to enable `zfs_admin_snapshot`, in `/etc/modprobe.d/zfs.conf`:
+
+	options zfs zfs_admin_snapshot=1
+
+Propagate user permissions for the ZFS partition:
+
+	sudo zfs allow -ld -u `whoami` create,mount,send,receive,snapshot tank/test
+
 ## Contributing
 
 1. Fork it

@@ -96,7 +96,7 @@ module LSync
 				# S is always a data destination, therefore s can't be @master
 				next if server == @master
 
-				next unless server.role?(options[:role] || :any)
+				# next unless server.role?(options[:role] || :any)
 
 				server_controller = CopyController.new(self, logger, master, server, current)
 

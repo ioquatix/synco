@@ -1,4 +1,6 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+#!/usr/bin/env rspec
+
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,19 +20,15 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'pathname'
+require 'lsync/server'
+require 'lsync/shells/ssh'
 
-module LSync
-	# A shell provides access to a server, typically to run an instance of `ruby`.
-	class Shell
-		def initialize(*command, **options)
-			@command = command
-			@options = options
-		end
+module LSync::ShellSpec
+	describe LSync::Shells::SSH do
+		let(:server) {LSync::Server.new('localhost')}
 		
-		# The command required to connect to the remote machine.
-		def connection_command(server, *arguments)
-			[*@command, *arguments, server.host]
+		it 'should generate a connection command' do
+			expect(subject.connection_command(server)).to be == ['ssh', 'localhost']
 		end
 	end
 end

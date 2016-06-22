@@ -23,6 +23,22 @@ require 'shellwords'
 
 module LSync
 	module Methods
+		class RSync
+			def initialize(command: 'scp')
+				@command = command
+			end
+			
+			def run(controller)
+				directory = controller.directory
+				
+				controller.master.run(
+					@command,
+					controller.master.connection_string(directory)
+					controller.target.connection_string(directory)
+				)
+			end
+		end
+		
 		
 		# RSync Exit Codes as of 2011:
 		

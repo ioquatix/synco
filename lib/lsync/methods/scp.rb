@@ -18,19 +18,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'pathname'
+require_relative '../method'
 
 module LSync
-	# A shell provides access to a server, typically to run an instance of `ruby`.
-	class Shell
-		def initialize(*command, **options)
-			@command = command
-			@options = options
-		end
-		
-		# The command required to connect to the remote machine.
-		def connection_command(server, *arguments)
-			[*@command, *arguments, server.host]
+	module Methods
+		class SCP
+			def initialize(*command)
+				if command.empty?
+					@command = ['scp', '-r']
+				else
+					@command = command
+				end
+			end
+			
+			def run(controller)
+				current = controller.current
+				master = controller.master
+				target = controller.target
+				directory = controller.directory
+				
+				current.exec(
+					*@command,
+					*@arguments,
+					master.connection_string(directory, on: current),
+					target.connection_string(directory, on: current)
+				)
+			end
 		end
 	end
 end

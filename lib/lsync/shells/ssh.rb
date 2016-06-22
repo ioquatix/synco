@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.cotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,14 +18,14 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'lsync/shell'
+require_relative '../shell'
 
 module LSync
 	module Shells
 		# SSH shell provides access to a remote server using SSH.
 		class SSH < Shell
-			def initialize(options = {})
-				super(options[:command] || "ssh", options)
+			def initialize(command: 'ssh', **options)
+				super(command, options)
 			end
 			
 			# The connection options for ssh
@@ -58,8 +58,8 @@ module LSync
 				return args
 			end
 			
-			def connection_command(server, arguments = [])
-				super(server, arguments + command_arguments)
+			def connection_command(server, *arguments)
+				super(server, *command_arguments+arguments)
 			end
 		end
 	end

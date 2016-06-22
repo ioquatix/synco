@@ -73,9 +73,6 @@ module LSync
 			@method = method
 
 			@connection = nil
-			@platform = nil
-			
-			@arguments_mapping = ArgumentsMapping.new
 		end
 
 		def connect
@@ -116,7 +113,7 @@ module LSync
 			process_status = nil
 			
 			Process::Group.wait do |group|
-				group.run(*Arguments[command], **options) do |status|
+				group.run(*command, **options) do |status|
 					@logger.info "... finished #{status}."
 					process_status = status
 				end

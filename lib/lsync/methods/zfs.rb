@@ -62,11 +62,11 @@ module LSync
 				Process::Group.wait do |group|
 					input, output = IO.pipe
 					
-					group.run(*Arguments.map(source), out: output) do |exit_status|
+					group.run(*source, out: output) do |exit_status|
 						raise CommandFailure.new(source, exit_status) unless exit_status.success?
 					end
 					
-					group.run(*Arguments.map(destination), in: input) do |exit_status|
+					group.run(*destination, in: input) do |exit_status|
 						raise CommandFailure.new(destination, exit_status) unless exit_status.success?
 					end
 				end

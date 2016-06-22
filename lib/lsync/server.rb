@@ -18,8 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'lsync/event_handler'
-require 'lsync/shells/ssh'
+require_relative 'event_handler'
+require_relative 'shells/ssh'
 
 require 'shellwords'
 
@@ -27,32 +27,25 @@ module LSync
 	class Server
 		include EventHandler
 		
-		def initialize(host, options = {})
+		def initialize(host, root: '/', **options)
 			@options = options
  
 			@host = host
-			@root = "/"
-
-			@platform = nil
+			@root = root
 
 			@shell = Shells::SSH.new
-
-			@enabled = true
 		end
 		
 		attr_accessor :mountpoint
 		
-		# The host name (e.g. DNS entry) for the given server
-		attr :host, true
+		# The host name (e.g. DNS entry) for the given server.
+		attr_accessor :host
 		
 		# The root path on the server in which all other directories will be relative to.
-		attr :root, true
-		
-		# The platform of the server, e.g. linux, used for executing actions.
-		attr :platform, true
+		attr_accessor :root
 		
 		# The shell to use to connect to the server.
-		attr :shell, true
+		attr_accessor :shell
 
 		# Give the full path for a particular subdirectory.
 		def full_path(directory = "./")
@@ -62,9 +55,9 @@ module LSync
 		end
 
 		# Give a general connection string (e.g +"host:/directory"+ or +"/directory"+ if local).
-		def connection_string(directory)
-			if local?
-				return full_path(directory)
+		def connection_string(directory, on: nil)
+			if self.host == on.host
+				return full_path.to_s
 			else
 				return @host + ":" + Shellwords.escape(full_path(directory))
 			end

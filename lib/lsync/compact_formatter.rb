@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 require 'rainbow'
+require 'shellwords'
 
 module LSync
 	class CompactFormatter
@@ -55,7 +56,7 @@ module LSync
 			
 			arguments = arguments.flatten.collect(&:to_s)
 			
-			buffer << Rainbow(arguments.join(' ')).bright.blue
+			buffer << Rainbow(Shellwords.join(arguments)).bright.blue
 			
 			if options
 				buffer << chdir_string(options)

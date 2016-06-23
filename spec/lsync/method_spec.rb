@@ -20,8 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'logger'
-require 'lsync/script'
+require 'lsync/scope'
 require 'lsync/methods/scp'
 
 module LSync::ShellSpec
@@ -33,16 +32,34 @@ module LSync::ShellSpec
 		
 		let(:script) {LSync::Script.new}
 		let(:logger) {Logger.new($stderr)}
-		let(:master) {LSync::Server.new('localhost', root: source_path)}
-		let(:target) {LSync::Server.new(test_server, root: destination_path)}
+		let(:master_server) {LSync::Server.new('localhost', root: source_path)}
+		let(:target_server) {LSync::Server.new(test_server, root: destination_path)}
 		
-		let(:script_scope) {LSync::ScriptScope.new(script, group)}
-		let(:directory_controller) {LSync::DirectoryController.new(script, logger, master, target, master, "")}
+		let(:group) {Process::Group.new}
+		let(:script_scope) {LSync::ScriptScope.new(script, logger, group)}
+		let(:sync_scope) {LSync::SyncScope.new(script_scope, target_server)}
 		
+		let(:directory) {LSync::Directory.new(".")}
+		let(:directory_scope) {LSync::DirectoryScope.new(sync_scope, directory)}
+		
+		# This example shows all the state which goes into one single method invocation:
 		it 'should copy files from master to target' do
-			result = subject.run(directory_controller)
+			script.instance_variable_set(:@master_server, master_server)
+			script.instance_variable_set(:@current_server, master_server)
 			
-			expect(result).to be_success
+			expect(directory_scope.master_server).to_not be == nil
+			expect(directory_scope.target_server).to_not be == nil
+			expect(directory_scope.current_server).to_not be == nil
+
+			result = nil
+
+			group.wait do
+				Fiber.new do
+					subject.call(directory_scope)
+				end.resume
+			end
+			
+			expect(File).to be_exist destination_path
 		end
 	end
 end

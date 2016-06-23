@@ -106,8 +106,6 @@ module LSync
 				# Create the destination backup directory
 				target_server.run('mkdir', '-p', target_server.full_path(incremental_path))
 				
-				puts target_server.connection_string(incremental_path, on: master_server)
-				
 				master_server.run(
 					*@command,
 					*@arguments,

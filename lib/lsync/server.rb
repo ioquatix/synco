@@ -61,9 +61,7 @@ module LSync
 		# Give the full path for a particular subdirectory.
 		def full_path(directory = "")
 			path = File.expand_path(directory.to_s, @root)
-
-			puts "#{directory}, #{@root} -> #{path}"
-
+			
 			Directory.normalize(path)
 		end
 

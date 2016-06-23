@@ -62,13 +62,15 @@ module LSync
 		def full_path(directory = "")
 			path = File.expand_path(directory.to_s, @root)
 
+			puts "#{directory}, #{@root} -> #{path}"
+
 			Directory.normalize(path)
 		end
 
 		# Give a general connection string (e.g +"host:/directory"+ or +"/directory"+ if local).
 		def connection_string(directory, on: nil)
 			if self.host == on.host
-				return full_path.to_s
+				return full_path(directory).to_s
 			else
 				return @host + ":" + Shellwords.escape(full_path(directory))
 			end

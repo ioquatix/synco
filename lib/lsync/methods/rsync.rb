@@ -23,41 +23,7 @@ require 'shellwords'
 
 module LSync
 	module Methods
-		class RSync
-			def connect_arguments(master, target)
-				return [] if master.same_host?(target)
-				
-				# This gives the command required to connect to the remote server, e.g. `ssh example.com`
-				command = target.connection_command
-
-				# RSync -e option simply appends the hostname. There is no way to control this behaviour.
-				if command.last != target.host
-					abort "RSync shell requires hostname at end of command! #{command.inspect}"
-				else
-					command.pop
-				end
-
-				return ['-e', Shellwords.join(command)]
-			end
-			
-			def run(controller)
-				master = controller.master
-				target = controller.target
-				directory = controller.directory
-				
-				master.exec(
-					*@command,
-					*@arguments,
-					*connect_arguments(master, target),
-					master.connection_string(directory, on: master),
-					target.connection_string(directory, on: master)
-				)
-			end
-		end
-		
-		
 		# RSync Exit Codes as of 2011:
-		
 		# 0      Success
 		# 1      Syntax or usage error
 		# 2      Protocol incompatibility
@@ -81,79 +47,40 @@ module LSync
 		# 35     Timeout waiting for daemon connection
 		
 		class RSync < Method
-			def initialize(direction, *arguments, **options)
-				super(options)
-
-				@direction = direction
-				@rsync = options[:rsync] || "rsync"
+			def default_command
+				['rsync', '--archive', '--stats']
 			end
 			
-		protected
-			
-
-
-			def configuration(controller, source_directory, destination_directory)
-				local_server = nil
-				remote_server = nil
-				source = nil
-				destination = nil
-
-				if @direction == :push
-					local_server = controller.master
-					remote_server = controller.target
-
-					destination = remote_server.connection_string(destination_directory)
-					source = local_server.full_path(source_directory)
-				else
-					local_server = controller.target
-					remote_server = controller.master
-
-					source = remote_server.connection_string(source_directory)
-					destination = local_server.full_path(destination_directory)
-				end
+			def connect_arguments(master_server, target_server)
+				return [] if master_server.same_host?(target_server)
 				
-				return local_server, remote_server, source, destination
-			end
-			
-			def run_handler(controller, local_server, source, destination, arguments)
-				command = [@rsync] + arguments + [source, destination]
+				# This gives the command required to connect to the remote server, e.g. `ssh example.com`
+				command = target_server.connection_command
 
-				local_server.exec(*command) do |task|
-					LSync::log_task(task, controller.logger)
-
-					result = task.wait
-
-					# Exit status 24 means that some files were deleted between indexing the data and copying it.
-					unless result.exitstatus == 0 || result.exitstatus == 24
-						raise BackupMethodError.new("Backup from #{source} to #{destination} failed.", :method => self)
-					end
-				end
-			end
-			
-		public
-			
-			def run(controller)
-				directory = controller.directory
-				arguments = (@options[:arguments] || ["--archive"]) + (directory.options[:arguments] || [])
-
-				local_server, remote_server, source, destination = configuration(controller, controller.directory, controller.directory)
-
-				arguments += connect_arguments(local_server, remote_server)
-
-				# Create the destination backup directory
-				controller.target.exec!("mkdir", "-p", controller.target.full_path(directory.path))
-
-				run_handler(controller, local_server, source, destination, arguments)
-			end
-			
-			def should_run?(controller)
-				if @direction == :push
-					return controller.current == controller.master
-				elsif @direction == :pull
-					return controller.target.local?
+				# RSync -e option simply appends the hostname. There is no way to control this behaviour.
+				if command.last != target_server.host
+					raise ArgumentError.new("RSync shell requires hostname at end of command! #{command.inspect}")
 				else
-					return false
+					command.pop
 				end
+
+				return ['-e', Shellwords.join(command)]
+			end
+			
+			def call(scope)
+				master_server = scope.master_server
+				target_server = scope.target_server
+				directory = scope.directory
+				
+				master_server.run(
+					*@command,
+					*@arguments,
+					*connect_arguments(master_server, target_server),
+					master_server.connection_string(directory, on: master_server),
+					target_server.connection_string(directory, on: master_server)
+				)
+			rescue CommandFailure => failure
+				raise unless failure.status.to_i == 24
 			end
 		end
 		
@@ -162,25 +89,35 @@ module LSync
 				@options[:snapshot_name] || SNAPSHOT_NAME
 			end
 			
-			def run(controller)
-				directory = controller.directory
-				arguments = (@options[:arguments] || []) + (directory.options[:arguments] || [])
+			def latest_name
+				@options[:latest_name] || LATEST_NAME
+			end
+			
+			def call(scope)
+				master_server = scope.master_server
+				target_server = scope.target_server
 				
-				link_dest = Pathname.new("../" * (directory.path.depth + 1)) + "latest" + directory.path
-				arguments += ['--archive', '--link-dest', link_dest.to_s]
-
-				destination_directory = File.join(snapshot_name, directory.path)
-
-				local_server, remote_server, source, destination = configuration(controller, controller.directory, destination_directory)
-
-				arguments += connect_arguments(local_server, remote_server)
-
+				directory = scope.directory
+				latest_path = File.join("../" * directory.depth, latest_name, directory.path)
+				
+				link_arguments = ['--link-dest', latest_path]
+				incremental_path = File.join(snapshot_name, directory.path)
+				
 				# Create the destination backup directory
-				controller.target.exec!("mkdir", "-p", controller.target.full_path(destination_directory))
-
-				run_handler(controller, local_server, source, destination, arguments)
+				target_server.run('mkdir', '-p', target_server.full_path(incremental_path))
+				
+				puts target_server.connection_string(incremental_path, on: master_server)
+				
+				master_server.run(
+					*@command,
+					*@arguments,
+					*connect_arguments(master_server, target_server),
+					master_server.connection_string(directory, on: master_server),
+					target_server.connection_string(incremental_path, on: master_server)
+				)
+			rescue CommandFailure => failure
+				raise unless failure.status.to_i == 24
 			end
 		end
-		
 	end
 end

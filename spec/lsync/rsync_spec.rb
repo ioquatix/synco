@@ -1,3 +1,5 @@
+#!/usr/bin/env rspec
+
 # Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,27 +20,56 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative '../method'
+require 'logger'
+require 'lsync/script'
+require 'lsync/scope'
+require 'lsync/methods/rsync'
 
-module LSync
-	module Methods
-		class SCP < Method
-			def default_command
-				['scp', '-pr']
+describe LSync::Methods::RSync do
+	it 'should copy files using rsync' do
+		script = LSync::Script.build(master: :source) do
+			self.method = LSync::Methods::RSyncSnapshot.new
+			
+			server(:source) do
+				self.root = File.join(__dir__, 'source')
 			end
 			
-			def call(scope, arguments: [])
-				server = scope.current_server
-				directory = scope.directory
-				
-				server.run(
-					*@command,
-					*arguments,
-					# If the destination directory already exists, scp will create the source directory inside the destinatio directory. This behaviour means that running scp multiple times gives different results, i.e. the first time it will copy source/* to destination/*, but the second time you will end up with destination/source/*. Putting a dot after the first path alleviates this issue for some reason.
-					scope.master_server.connection_string(directory, on: server) + '.',
-					scope.target_server.connection_string(directory, on: server)
-				)
+			server(:backup) do
+				self.root = File.join(__dir__, 'destination')
 			end
+			
+			copy(".")
 		end
+		
+		LSync::Runner.new(script).call
+		
+		expect(File).to be_exist script[:backup].root
 	end
+	
+	it 'should copy files using rsync snapshot' do
+		script = LSync::Script.build(master: :source) do
+			self.method = LSync::Methods::RSyncSnapshot.new
+			
+			server(:source) do
+				self.root = File.join(__dir__, 'source')
+			end
+			
+			server(:backup) do
+				self.root = File.join(__dir__, 'destination-rsyncsnapshot')
+				
+				on(:success) do
+					target_server.run "lsync", "rotate", chdir: :root
+					target_server.run "lsync", "prune", chdir: :root
+				end
+			end
+			
+			copy(".")
+		end
+		
+		LSync::Runner.new(script).call
+		
+		expect(File).to be_exist script[:backup].root
+	end
+
 end
+	

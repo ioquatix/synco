@@ -17,9 +17,9 @@ $stdout.sync = true
 $stderr.sync = true
 
 LSync::run_script do |script|
-	script.method = LSync::Methods::RSyncSnapshot.new(:push, "--archive", "--compress", "--stats")
+	self.method = LSync::Methods::RSyncSnapshot.new(:push, "--archive", "--compress", "--stats")
 	
-	script.master = :src
+	self.master = :src
 	
 	server(:src) do |server|
 		server.root = ARGV[0]

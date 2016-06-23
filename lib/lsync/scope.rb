@@ -26,6 +26,18 @@ require 'logger'
 require 'delegate'
 
 module LSync
+	class CommandFailure < RuntimeError
+		def initialize(command, status)
+			@command = command
+			@status = status
+			
+			super "Command #{command.inspect} failed: #{status}!"
+		end
+		
+		attr :command
+		attr :status
+	end
+	
 	class Runner
 		def initialize(*scripts, loggger: nil)
 			@scripts = scripts
@@ -135,14 +147,20 @@ module LSync
 			
 			super(@output)
 			
-			Thread.new do
+			@thread = Thread.new do
 				@input.each{|line| logger.send(level, line.chomp!)}
 			end
 		end
 		
 		def close
-			@input.close
+			# Close the output pipe, we should never be writing to this anyway:
 			@output.close
+			
+			# Wait for the thread to read everything and join:
+			@thread.join
+			
+			# Close the input pipe because it's already closed on the remote end:
+			@input.close
 		end
 	end
 	
@@ -163,13 +181,14 @@ module LSync
 		end
 		
 		def run(*command, **options, &block)
+			if options[:chdir].is_a? Symbol
+				options[:chdir] = self.send(options[:chdir])
+			end
 			# We are invoking a command from the given server, so we need to use the shell to connect..
-			if @from
+			if @from and !@from.same_host?(self)
 				command = self.connection_command + ["--"] + command
 				
 				if chdir = options.delete(:chdir)
-					chdir = self.root if chdir == :root
-					
 					command = ["lsync", "--root", chdir, "spawn"] + command
 				end
 			end
@@ -185,7 +204,7 @@ module LSync
 			options[:err].close
 			
 			unless status.success?
-				raise RuntimeError.new("Command #{command.inspect} failed: #{status}!")
+				raise CommandFailure(command, status)
 			end
 		end
 	end

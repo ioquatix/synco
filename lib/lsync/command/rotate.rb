@@ -24,6 +24,8 @@
 
 require 'samovar'
 
+require_relative '../method'
+
 module LSync
 	module Command
 		class Rotate < Samovar::Command

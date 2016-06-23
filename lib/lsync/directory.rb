@@ -39,6 +39,10 @@ module LSync
 
 		attr :path
 
+		def depth
+			path.count('/')
+		end
+
 		def to_s
 			@path
 		end

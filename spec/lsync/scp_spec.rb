@@ -1,3 +1,5 @@
+#!/usr/bin/env rspec
+
 # Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,33 +20,35 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'controller'
+require 'logger'
+require 'lsync/script'
+require 'lsync/scope'
+require 'lsync/methods/scp'
 
-module LSync
-	class AbsolutePathError < ArgumentError
-	end
-	
-	# A specific directory which is relative to the root of a given server. Specific configuration details
-	# such as excludes and other options may be specified.
-	class Directory < Controller
-		def initialize(path, **options)
-			super()
+describe LSync::Methods::SCP do
+	it 'should build a script with desired configuration' do
+		script = LSync::Script.build(master: :source) do
+			self.method = LSync::Methods::SCP.new
 			
-			@path = self.class.normalize(path)
+			server(:source) do
+				self.root = File.join(__dir__, 'source')
+			end
 			
-			if @path.start_with?('/')
-				raise AbsolutePathError.new("Directory path #{path} may not be absolute!")
+			server(:backup) do
+				self.root = File.join(__dir__, 'destination')
+			end
+			
+			copy(".")
+			
+			on(:failure) do |exception|
+				logger.error{exception}
 			end
 		end
-
-		attr :path
-
-		def to_s
-			@path
-		end
 		
-		def self.normalize(path)
-			path.end_with?('/') ? path : path + '/'
-		end
+		expect(script.events).to include(:failure)
+		
+		LSync::Runner.new(script).call
+		
+		expect(File).to be_exist script[:backup].root
 	end
 end

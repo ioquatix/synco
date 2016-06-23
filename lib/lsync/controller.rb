@@ -24,7 +24,9 @@ module LSync
 		def self.build(*arguments, **options, &block)
 			controller = self.new(*arguments, **options)
 			
-			controller.instance_exec(&block)
+			if block_given?
+				controller.instance_exec(&block)
+			end
 			
 			controller.freeze
 			
@@ -33,6 +35,12 @@ module LSync
 		
 		def initialize
 			@events = Hash.new{|hash,key| hash[key] = Array.new}
+		end
+		
+		def freeze
+			@events.freeze
+			
+			super
 		end
 		
 		attr :events
@@ -45,6 +53,8 @@ module LSync
 		# Fire an event which calls all registered event handlers in the order they were defined.
 		# The first argument is used to #instance_eval any handlers.
 		def fire(event, *args)
+			return false unless @events.key?(event)
+			
 			handled = false
 			
 			scope = args.shift
@@ -82,9 +92,9 @@ module LSync
 					
 					fire(:success, *arguments)
 				end
-			rescue Exception => error
+			rescue Exception => exception
 				# Propagage the exception unless it was handled in some specific way.
-				raise unless fire(:failure, *arguments, error)
+				raise unless fire(:failure, *arguments, exception)
 			ensure
 				fire(:finish, *arguments)
 			end

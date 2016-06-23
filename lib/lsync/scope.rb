@@ -22,48 +22,68 @@ require 'process/group'
 require 'delegate'
 
 module LSync
-	class ScriptScope
-		def initialize(script, group)
-			@script = script
-			@group = group
+	class Runner
+		def initialize(*scripts, loggger: nil)
+			@scripts = scripts
 			
-			@current = ServerScope.new(self, @script.current)
-			@master = ServerScope.new(self, @script.master, @current)
+			@logger = logger || Logger.new($stderr).tap{|logger| logger.formatter = CompactFormatter.new}
 		end
 		
-		attr :script
-		attr :group
-		attr :master
-		attr :current
+		attr :scripts
+		attr :logger
 		
-		# Run the backup process for all servers and directories specified.
-		def execute
+		def call
 			start_time = Time.now
 			
-			@logger.info "===== Starting at #{start_time} ====="
-
-			if running_on_master?
-				@logger.info "We are the master server..."
-			else
-				@logger.info "We are not the master server..."
-				@logger.info "Master server is #{@master}..."
-			end
+			logger.info "===== Starting at #{start_time} ====="
 			
-			run_script(group)
+			Process::Group.wait do |group|
+				@scripts.each do |script|
+					Fiber.new do
+						ScriptScope.new(script, @logger, group).call
+					end.resume
+				end
+			end
 		ensure
 			end_time = Time.now
 			logger.info "[Time]: (#{end_time - start_time}s)."
 			logger.info "===== Finished backup at #{end_time} ====="
 		end
+	end
+	
+	class ScriptScope
+		def initialize(script, logger, group)
+			@script = script
+			@logger = logger
+			@group = group
+			
+			@current_server = ServerScope.new(@script.current_server, self)
+			@master_server = ServerScope.new(@script.master_server, self, @current_server)
+		end
 		
-		private
+		attr :script
+		attr :logger
+		attr :group
+		attr :master_server
+		attr :current_server
 		
-		def run_script(group)
+		def method
+			@script.method
+		end
+		
+		def call
+			if @script.running_on_master?
+				logger.info "We are the master server..."
+			else
+				logger.info "We are not the master server..."
+				logger.info "Master server is #{@master}..."
+			end
+
 			@script.try(self) do
 				# This allows events to run on the master server if specified, before running any backups.
-				master.try(self) do
+				@master_server.try(self) do
 					method.try(self) do
-						logger.info "Running backups for server #{current}..."
+						logger.info "Running backups for server #{@current_server}..."
 						
 						run_servers(group)
 					end
@@ -71,25 +91,33 @@ module LSync
 			end
 		end
 
+		private
+
+		def target_servers
+			@script.servers.each do |name, server|
+				# server is always a data destination, therefore server can't be @master_server:
+				next if @master_server.eql?(server)
+				
+				yield ServerScope.new(server, self, @current_server)
+			end
+		end
+
 		# This function runs the method for each directory and server combination specified.
 		def run_servers(group)
-			servers.each do |name, server|
-				# S is always a data destination, therefore s can't be @master
-				next if server.equal?(@master)
-
-				copy_controller = CopyController.new(self, master, server, current)
+			target_servers do |server|
+				sync_scope = SyncScope.new(self, server)
 
 				logger.info "===== Processing ====="
-				logger.info "[Master]: #{master}"
+				logger.info "[Master]: #{master_server}"
 				logger.info "[Target]: #{server}"
 				
-				server.try(server_controller) do
-					directories.each do |directory|
-						directory_controller = DirectoryController.new(self, logger, master, server, current, directory)
+				server.try(sync_scope) do
+					@script.directories.each do |directory|
+						directory_scope = DirectoryScope.new(sync_scope, directory)
 
 						logger.info "[Directory]: #{directory}"
-						directory.try(directory_controller) do
-							method.run(directory_controller)
+						directory.try(directory_scope) do
+							method.call(directory_scope)
 						end
 					end
 				end
@@ -97,44 +125,84 @@ module LSync
 		end
 	end
 	
-	class ServerScope < DelegateClass(ScriptScope)
-		def initialize(script_scope, server, from = nil)
-			super(script_scope)
+	class LogPipe < DelegateClass(IO)
+		def initialize(logger, level = :info)
+			@input, @output = IO.pipe
 			
-			@server = server
+			super(@output)
+			
+			Thread.new do
+				@input.each{|line| logger.send(level, line.chomp!)}
+			end
+		end
+		
+		def close
+			@input.close
+			@output.close
+		end
+	end
+	
+	class ServerScope < DelegateClass(Server)
+		def initialize(server, script_scope, from = nil)
+			super(server)
+			
+			@script_scope = script_scope
 			@from = from
 		end
 		
-		attr :server
-		attr :from
+		def logger
+			@logger ||= @script_scope.logger
+		end
+		
+		def group
+			@group ||= @script_scope.group
+		end
 		
 		def run(*command, **options, &block)
 			# We are invoking a command from the given server, so we need to use the shell to connect..
 			if @from
-				command = @server.connection_command + ["--"] + command
+				command = self.connection_command + ["--"] + command
 				
 				if chdir = options.delete(:chdir)
-					chdir = @server.root if chdir == :root
+					chdir = self.root if chdir == :root
 					
 					command = ["lsync", "--root", chdir, "spawn"] + command
 				end
 			end
 			
-			group.run(*command, **options) do |status|
-				raise RuntimeError.new("Command #{command.inspect} failed #{status}!") unless status.success?
+			logger.info("shell") {[command, options]}
+			
+			options[:out] ||= LogPipe.new(logger)
+			options[:err] ||= LogPipe.new(logger, :error)
+			
+			status = self.group.spawn(*command, **options)
+			
+			options[:out].close
+			options[:err].close
+			
+			unless status.success?
+				raise RuntimeError.new("Command #{command.inspect} failed: #{status}!")
 			end
 		end
 	end
 	
-	class DirectoryScope < DelegateClass(ScriptScope)
-		def initialize(script_scope, target, directory)
+	class SyncScope < DelegateClass(ScriptScope)
+		def initialize(script_scope, target)
 			super(script_scope)
 			
-			@target = ServerScope.new(script_scope, target, script_scope.current)
+			@target_server = ServerScope.new(target, script_scope, script_scope.current_server)
+		end
+		
+		attr :target_server
+	end
+	
+	class DirectoryScope < DelegateClass(SyncScope)
+		def initialize(sync_scope, directory)
+			super(sync_scope)
+			
 			@directory = directory
 		end
 		
-		attr :target
 		attr :directory
 	end
 end

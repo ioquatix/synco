@@ -34,16 +34,18 @@ require 'lockfile'
 
 module LSync
 	# Run a prepared backup script using a lockfile.
-	def self.run_script(**options, &block)
+	def self.run_script(script: nil, **options, &block)
 		script = LSync::Script.new(options, &block)
 		lockfile_path = $0 + ".lock"
 		
-		# script.on(:failure) do |error|
-		# 	LSync::log_error(error, logger)
-		# end
+		script.on(:failure) do |exception|
+			logger.error{exception}
+			
+			raise
+		end
 		
 		Lockfile.new(lockfile_path, :retries => 0) do
-			Context.new(script).run!
+			Runner.new(script).call
 		end
 	end
 end

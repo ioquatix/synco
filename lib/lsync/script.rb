@@ -20,8 +20,12 @@
 
 require_relative 'method'
 require_relative 'server'
-#require_relative 'directory'
+require_relative 'directory'
 require_relative 'controller'
+
+require_relative 'compact_formatter'
+
+require 'socket'
 
 require 'process/group'
 
@@ -32,8 +36,6 @@ module LSync
 	class Script < Controller
 		def initialize(method: nil, servers: {}, directories: [], master: "localhost", logger: nil)
 			super()
-			
-			@logger = logger || Logger.new($stderr)
 			
 			@method = method
 			@servers = servers
@@ -47,7 +49,7 @@ module LSync
 			super
 		end
 		
-		def running_on_master_server?
+		def running_on_master?
 			current_server.same_host?(master_server)
 		end
 		
@@ -84,7 +86,7 @@ module LSync
 		def find_current_server
 			# There might be the case that the the local machine is both the master server and the backup server..
 			# thus we check first if the master server is the local machine:
-			if localhost?(master_server.host)
+			if master_server and localhost?(master_server.host)
 				@master_server
 			else
 				# Find a server config that specifies the local host
@@ -105,16 +107,13 @@ module LSync
 		# Backup a particular path (or paths).
 		def directories(*paths, **options, &block)
 			paths.each do |path|
-				@directories << Directory.build(**options, &block)
+				@directories << Directory.build(path, **options, &block)
 			end
 		end
 		
 		alias :copy :directories
 		alias :backup :directories
 		alias :sync :directories
-
-		# The script logger which will be provided all events when the script is run.
-		attr_accessor :logger
 
 		# The master server name (e.g. symbolic or host name)
 		attr_accessor :master

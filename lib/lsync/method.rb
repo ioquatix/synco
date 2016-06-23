@@ -31,6 +31,8 @@ module LSync
 	# A backup method provides the interface to copy data from one system to another.
 	class Method < Controller
 		def initialize(*command, arguments: [], **options)
+			super()
+			
 			@command = command.empty? ? default_command : command
 			@arguments = arguments
 			@options = options
@@ -39,17 +41,15 @@ module LSync
 		attr :options
 		attr :arguments
 		
-		def run(controller, arguments: [])
-			current = controller.current
-			master = controller.master
-			target = controller.target
-			directory = controller.directory
+		def call(scope, arguments: [])
+			server = scope.current_server
+			directory = scope.directory
 			
-			current.exec(
+			server.run(
 				*@command,
 				*arguments,
-				master.connection_string(directory, on: executor),
-				target.connection_string(directory, on: executor)
+				scope.master_server.connection_string(directory, on: server),
+				scope.target_server.connection_string(directory, on: server)
 			)
 		end
 	end

@@ -25,6 +25,7 @@ Gem::Specification.new do |spec|
 	spec.add_dependency("process-group", ">= 1.1.0")
 	
 	spec.add_dependency("lockfile")
+	spec.add_dependency("rainbow", "~> 2.0")
 
 	spec.has_rdoc = "yard"
 

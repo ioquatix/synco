@@ -39,9 +39,13 @@ describe LSync::Script do
 			end
 		end
 		
+		# After building, everything should be frozen..
 		expect(script).to be_frozen
+		
+		# We should have the two servers defined:
 		expect(script.servers).to include(:source, :backup)
 		
+		# We should have a single event for backup server:
 		expect(script[:backup].events).to include(:prepare)
 	end
 end

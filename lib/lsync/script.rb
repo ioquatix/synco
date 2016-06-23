@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
 
 require_relative 'method'
 require_relative 'server'
-require_relative 'directory'
+#require_relative 'directory'
 require_relative 'controller'
 
 require 'process/group'
@@ -29,118 +29,103 @@ module LSync
 	# The main backup/synchronisation mechanism is the backup script. It specifies all
 	# servers and directories, and these are then combined specifically to produce the
 	# desired data replication behaviour.
-	class Script
-		include EventHandler
-
-		def initialize(**options, &block)
-			if options[:logger]
-				@logger = options[:logger]
-			else
-				@logger = Logger.new($stderr)
-			end
+	class Script < Controller
+		def initialize(method: nil, servers: {}, directories: [], master: "localhost", logger: nil)
+			super()
 			
-			@method = nil
-
-			@servers = {}
-			@directories = []
-			@master = "localhost"
-
-			if block_given?
-				instance_eval &block
-			end
+			@logger = logger || Logger.new($stderr)
+			
+			@method = method
+			@servers = servers
+			@directories = directories
+			@master = master
 		end
+		
+		def freeze
+			current_server; master_server
+			
+			super
+		end
+		
+		def running_on_master_server?
+			current_server.same_host?(master_server)
+		end
+		
+		def resolve_name(name)
+			Socket.gethostbyname(name)[0]
+		end
+		
+		def localhost?(name)
+			return true if name == "localhost"
 
-		# Given a name, find out which server config matches it
+			host = resolve_name(Socket.gethostname)
+
+			return name == host
+		end
+		
+		# Given a name, find out which server config matches it.
 		def find_named_server(name)
 			if @servers.key? name
-				return @servers[name]
+				@servers[name]
 			else
-				hostname = Socket.gethostbyname(name)[0] rescue name
-				return @servers.values.find { |s| s.host == hostname }
+				host = resolve_name(name)
+				@servers.values.find{|server| server.host == host}
 			end
-			
-			# No server was found for this name
-			return nil
 		end
 
 		alias :[] :find_named_server
 
-		# Find the master server based on the name #master= specified
-		def find_master_server
-			server = find_named_server(@master)
-			
-			# At this point we must know the current server or we can't continue
-			if server == nil
-				raise ScriptError.new("Could not determine master server!", :script => self, :name => @master)
-			end
-			
-			return server
+		# The master server based on the name #master= specified
+		def master_server
+			@master_server ||= find_named_server(@master)
 		end
 
 		# Find the server that matches the current machine
 		def find_current_server
-			master = find_master_server
-			server = nil
-
 			# There might be the case that the the local machine is both the master server and the backup server..
 			# thus we check first if the master server is the local machine:
-			if master.local?
-				server = master
+			if localhost?(master_server.host)
+				@master_server
 			else
 				# Find a server config that specifies the local host
-				server = @servers.values.find { |s| s.local? }
+				@servers.values.find{|server| localhost?(server.host)}
 			end
-
-			# At this point we must know the current server or we can't continue
-			if server == nil
-				raise ScriptError.new("Could not determine current server!", :script => self)
-			end
-
-			return server
+		end
+		
+		def current_server
+			@current_server ||= find_current_server
 		end
 
 		# Register a server with the backup script.
-		def server(name)
-			case name
-			when Symbol
-				host = "localhost"
-			else
-				host = name.to_s
-			end
-
-			server = Server.new(host)
-
-			yield server if block_given?
-
-			@servers[name] = server
+		def server(*arguments, **options, &block)
+			server = Server.build(*arguments, **options, &block)
+			@servers[server.name] = server
 		end
 
 		# Backup a particular path (or paths).
-		def copy(*paths)
+		def directories(*paths, **options, &block)
 			paths.each do |path|
-				directory = Directory.new(path)
-
-				yield directory if block_given?
-
-				@directories << directory
+				@directories << Directory.build(**options, &block)
 			end
 		end
-
-		alias :backup :copy
+		
+		alias :copy :directories
+		alias :backup :directories
+		alias :sync :directories
 
 		# The script logger which will be provided all events when the script is run.
-		attr :logger, true
+		attr_accessor :logger
 
 		# The master server name (e.g. symbolic or host name)
-		attr :master, true
+		attr_accessor :master
 
 		# A specific method which will perform the backup (e.g. an instance of LSync::Method)
-		attr :method, true
+		attr_accessor :method
 
 		# All servers which are participating in the backup process.
-		attr :servers
+		attr_accessor :servers
 
 		# All directories which may be synchronised.
-		attr :directories
+		attr_accessor :directories
 	end
 end

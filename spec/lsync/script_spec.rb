@@ -1,4 +1,6 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+#!/usr/bin/env rspec
+
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,35 +20,28 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-module LSync
+require 'logger'
+require 'lsync/script'
+require 'lsync/methods/scp'
 
-	# Base exception class which keeps track of related components.
-	class Error < StandardError
-		def initialize(reason, components = {})
-			@reason = reason
-			@components = components
+describe LSync::Script do
+	it 'should build a script with desired configuration' do
+		script = LSync::Script.build do
+			server(:source) do
+			end
+			
+			server(:backup) do
+				self.root = '/tank/backups/servers/test'
+				
+				on(:prepare) do
+					run "lsync", "mount", chdir: :root
+				end
+			end
 		end
-
-		def to_s
-			@reason
-		end
-
-		attr :reason
-		attr :components
-	end
-
-	# Indicates that there has been a major backup script error.
-	class ScriptError < Error
-	end
-
-	# Indicates that there has been a major backup method error.
-	class BackupMethodError < Error
-	end
-
-	# Indicates that a backup action shell script has failed.
-	class CommandFailure < Error
-		def initialize(command, status)
-			super("Command #{command.inspect} failed with exit status #{status}", :command => command, :status => status)
-		end
+		
+		expect(script).to be_frozen
+		expect(script.servers).to include(:source, :backup)
+		
+		expect(script[:backup].events).to include(:prepare)
 	end
 end

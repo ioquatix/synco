@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,23 +18,39 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'lsync/method'
+require_relative '../method'
 require 'shellwords'
 
 module LSync
 	module Methods
 		class RSync
-			def initialize(command: 'scp')
-				@command = command
+			def connect_arguments(master, target)
+				return [] if master.same_host?(target)
+				
+				# This gives the command required to connect to the remote server, e.g. `ssh example.com`
+				command = target.connection_command
+
+				# RSync -e option simply appends the hostname. There is no way to control this behaviour.
+				if command.last != target.host
+					abort "RSync shell requires hostname at end of command! #{command.inspect}"
+				else
+					command.pop
+				end
+
+				return ['-e', Shellwords.join(command)]
 			end
 			
 			def run(controller)
+				master = controller.master
+				target = controller.target
 				directory = controller.directory
 				
-				controller.master.run(
-					@command,
-					controller.master.connection_string(directory)
-					controller.target.connection_string(directory)
+				master.exec(
+					*@command,
+					*@arguments,
+					*connect_arguments(master, target),
+					master.connection_string(directory, on: master),
+					target.connection_string(directory, on: master)
 				)
 			end
 		end
@@ -74,19 +90,7 @@ module LSync
 			
 		protected
 			
-			def connect_arguments (local_server, remote_server)
-				# This gives the command required to connect to the remote server, e.g. `ssh example.com`
-				command = remote_server.connection_command
 
-				# RSync -e option simply appends the hostname. There is no way to control this behaviour.
-				if command.last != remote_server.host
-					abort "RSync shell requires hostname at end of command! #{cmd.inspect}"
-				else
-					command.pop
-				end
-
-				return ['-e', Shellwords.join(command)]
-			end
 
 			def configuration(controller, source_directory, destination_directory)
 				local_server = nil

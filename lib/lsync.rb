@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -23,9 +23,9 @@ require 'socket'
 require 'set'
 require 'logger'
 
-require 'lsync/version'
-require 'lsync/script'
-require 'lsync/context'
+require_relative 'version'
+require_relative 'script'
+require_relative 'context'
 
 require 'fileutils'
 require 'optparse'

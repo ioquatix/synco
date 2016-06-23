@@ -36,10 +36,13 @@ module LSync::ShellSpec
 		let(:master) {LSync::Server.new('localhost', root: source_path)}
 		let(:target) {LSync::Server.new(test_server, root: destination_path)}
 		
+		let(:script_scope) {LSync::ScriptScope.new(script, group)}
 		let(:directory_controller) {LSync::DirectoryController.new(script, logger, master, target, master, "")}
 		
 		it 'should copy files from master to target' do
-			subject.run(directory_controller)
+			result = subject.run(directory_controller)
+			
+			expect(result).to be_success
 		end
 	end
 end

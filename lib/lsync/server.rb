@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,25 +18,34 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'event_handler'
+require_relative 'controller'
+require_relative 'directory'
 require_relative 'shells/ssh'
 
 require 'shellwords'
 
 module LSync
-	class Server
-		include EventHandler
-		
-		def initialize(host, root: '/', **options)
-			@options = options
- 
-			@host = host
+	class Server < Controller
+		def initialize(name, root: '/', shell: nil, **options)
+			super()
+			
+			@name = name
+			
+			case @name
+			when Symbol
+				@host = "localhost"
+			else
+				@host = name.to_s
+			end
+			
 			@root = root
-
-			@shell = Shells::SSH.new
+			@shell = shell || Shells::SSH.new
+			
+			@options = options
 		end
 		
-		attr_accessor :mountpoint
+		# The name of the server in the configuration (might be the same as the host).
+		attr :name
 		
 		# The host name (e.g. DNS entry) for the given server.
 		attr_accessor :host
@@ -47,11 +56,13 @@ module LSync
 		# The shell to use to connect to the server.
 		attr_accessor :shell
 
-		# Give the full path for a particular subdirectory.
-		def full_path(directory = "./")
-			p = File.expand_path(directory.to_s, @root)
+		attr_accessor :mountpoint
 
-			return Pathname.new(p).cleanpath.normalize_trailing_slash
+		# Give the full path for a particular subdirectory.
+		def full_path(directory = "")
+			path = File.expand_path(directory.to_s, @root)
+
+			Directory.normalize(path)
 		end
 
 		# Give a general connection string (e.g +"host:/directory"+ or +"/directory"+ if local).
@@ -67,19 +78,8 @@ module LSync
 			@shell.connection_command(self)
 		end
 
-		# Checks if the host resolves to the local machine.
-		def local?
-			return true if @host == "localhost"
-
-			hostname = Socket.gethostname
-
-			begin
-				hostname = Socket.gethostbyname(hostname)[0]
-			rescue SocketError
-				puts $!
-			end
-
-			return @host == hostname
+		def same_host?(other)
+			@host == other.host
 		end
 
 		# String representation of the server for logging.

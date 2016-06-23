@@ -22,8 +22,6 @@
 # It then ensures that there is a symlink called "latest" that points 
 # to the renamed directory.
 
-require_relative '../method'
-
 require 'samovar'
 
 module LSync

@@ -1,4 +1,4 @@
-# Copyright (c) 2007, 2011 Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,7 @@
 
 require 'fileutils'
 require 'pathname'
-require 'lsync/event_handler'
+require_relative 'controller'
 
 module LSync
 	SNAPSHOT_NAME = 'latest.snapshot'
@@ -29,19 +29,28 @@ module LSync
 	BACKUP_TIMEZONE = 'UTC'
 	
 	# A backup method provides the interface to copy data from one system to another.
-	class Method
-		include EventHandler
-		
-		def initialize(**options)
+	class Method < Controller
+		def initialize(*command, arguments: [], **options)
+			@command = command.empty? ? default_command : command
+			@arguments = arguments
 			@options = options
 		end
 		
 		attr :options
+		attr :arguments
 		
-		def run(controller)
-		end
-		
-		def should_run?(controller)
+		def run(controller, arguments: [])
+			current = controller.current
+			master = controller.master
+			target = controller.target
+			directory = controller.directory
+			
+			current.exec(
+				*@command,
+				*arguments,
+				master.connection_string(directory, on: executor),
+				target.connection_string(directory, on: executor)
+			)
 		end
 	end
 end

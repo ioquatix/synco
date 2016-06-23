@@ -1,4 +1,4 @@
-# Copyright, 2016, by Samuel G. D. Williams. <http://www.cotaku.com>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -36,26 +36,22 @@ module LSync
 			# [`:compression`] Enable compression.
 			# [`:user`]        Connect as a specific user.
 			def command_arguments
-				args = []
-
-				@options.each do |k,v|
+				@options.collect do |k,v|
 					case(k.to_sym)
 					when :port
-						args += ['-p', v.to_s]
+						['-p', v.to_s]
 					when :key
-						args += ['-i', v]
+						['-i', v]
 					when :keys
-						v.each { |key_path| args += ['-i', key_path] } 
+						v.collect { |key_path| ['-i', key_path] } 
 					when :timeout
-						args += ['-o', "ConnectTimeout #{v.to_i}".to_cmd]
+						['-o', "ConnectTimeout #{v.to_i}".to_cmd]
 					when :compression
-						args += ['-C'] if v
+						['-C'] if v
 					when :user
-						args += ['-l', v.to_s]
+						['-l', v.to_s]
 					end
-				end
-
-				return args
+				end.flatten.compact
 			end
 			
 			def connection_command(server, *arguments)

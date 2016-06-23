@@ -1,4 +1,4 @@
-# Copyright, 2016, Samuel G. D. Williams. <http://www.oriontransfer.co.nz>
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,95 +18,66 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'pathname'
-require 'logger'
+require 'process/group'
+require 'delegate'
 
 module LSync
-	class Context
-		def initialize(script, **options)
+	class ScriptScope
+		def initialize(script, group)
 			@script = script
+			@group = group
 			
-			@logger = script.logger || Logger.new($stderr)
-			@options = options
+			@current = ServerScope.new(self, @script.current)
+			@master = ServerScope.new(self, @script.master, @current)
 		end
 		
+		attr :script
+		attr :group
 		attr :master
 		attr :current
 		
-		attr :logger
-		attr :options
-		
-		attr :controller
-		
-		def method
-			@script.method
-		end
-		
-		def servers
-			@script.servers
-		end
-		
-		def directories
-			@script.directories
-		end
-		
 		# Run the backup process for all servers and directories specified.
-		def run!(**options)
+		def execute
 			start_time = Time.now
 			
-			@logger.info "===== Starting backup at #{start_time} ====="
+			@logger.info "===== Starting at #{start_time} ====="
 
-			@master = @script.find_master_server
-			@current = @script.find_current_server
-
-			if @master.local?
+			if running_on_master?
 				@logger.info "We are the master server..."
 			else
 				@logger.info "We are not the master server..."
 				@logger.info "Master server is #{@master}..."
 			end
-
-			@controller = ServerController.new(self, @logger, @master)
 			
-			Process::Group.wait do |group|
-				run_controllers!(group)
-			end
+			run_script(group)
 		ensure
 			end_time = Time.now
 			logger.info "[Time]: (#{end_time - start_time}s)."
 			logger.info "===== Finished backup at #{end_time} ====="
 		end
 		
-		def run_controllers!(group)
-			@script.try(controller) do
+		private
+		
+		def run_script(group)
+			@script.try(self) do
 				# This allows events to run on the master server if specified, before running any backups.
-				master.try(controller) do
-					method.try(controller) do
+				master.try(self) do
+					method.try(self) do
 						logger.info "Running backups for server #{current}..."
-
-						run_backups!
+						
+						run_servers(group)
 					end
 				end
 			end
 		end
 
 		# This function runs the method for each directory and server combination specified.
-		def run_backups!
+		def run_servers(group)
 			servers.each do |name, server|
 				# S is always a data destination, therefore s can't be @master
-				next if server == @master
+				next if server.equal?(@master)
 
-				# next unless server.role?(options[:role] || :any)
-
-				server_controller = CopyController.new(self, logger, master, server, current)
-
-				# Skip servers that shouldn't be processed
-				unless method.should_run?(server_controller)
-					logger.info "===== Skipping ====="
-					logger.info "[Master]: #{master}"
-					logger.info "[Target]: #{server}"
-					next
-				end
+				copy_controller = CopyController.new(self, master, server, current)
 
 				logger.info "===== Processing ====="
 				logger.info "[Master]: #{master}"
@@ -124,5 +95,46 @@ module LSync
 				end
 			end
 		end
+	end
+	
+	class ServerScope < DelegateClass(ScriptScope)
+		def initialize(script_scope, server, from = nil)
+			super(script_scope)
+			
+			@server = server
+			@from = from
+		end
+		
+		attr :server
+		attr :from
+		
+		def run(*command, **options, &block)
+			# We are invoking a command from the given server, so we need to use the shell to connect..
+			if @from
+				command = @server.connection_command + ["--"] + command
+				
+				if chdir = options.delete(:chdir)
+					chdir = @server.root if chdir == :root
+					
+					command = ["lsync", "--root", chdir, "spawn"] + command
+				end
+			end
+			
+			group.run(*command, **options) do |status|
+				raise RuntimeError.new("Command #{command.inspect} failed #{status}!") unless status.success?
+			end
+		end
+	end
+	
+	class DirectoryScope < DelegateClass(ScriptScope)
+		def initialize(script_scope, target, directory)
+			super(script_scope)
+			
+			@target = ServerScope.new(script_scope, target, script_scope.current)
+			@directory = directory
+		end
+		
+		attr :target
+		attr :directory
 	end
 end

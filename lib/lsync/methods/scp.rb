@@ -27,7 +27,7 @@ module LSync
 				['scp', '-pr']
 			end
 			
-			def call(scope, arguments: [])
+			def call(scope)
 				server = scope.current_server
 				directory = scope.directory
 				

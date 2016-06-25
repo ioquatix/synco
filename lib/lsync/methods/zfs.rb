@@ -23,73 +23,37 @@ require_relative '../method'
 module LSync
 	module Methods
 		class ZFS < Method
-			def initialize(direction, **options)
-				super(options)
-
-				@direction = direction
-				
-				@zfs = options.fetch(:zfs, 'zfs')
+			def default_command
+				['zfs', '-rnv']
 			end
 			
-		protected
-
-			def configuration(controller, source_directory, destination_directory)
-				local_server = nil
-				remote_server = nil
-				source = nil
-				destination = nil
-
-				if @direction == :push
-					local_server = controller.master
-					remote_server = controller.target
-
-					destination = [*remote_server.connection_command, @zfs, "recv", remote_server.full_path(destination_directory)]
-					source = [@zfs, "send", "-rnv", local_server.full_path(source_directory)]
-				else
-					local_server = controller.target
-					remote_server = controller.master
-
-					source = [*remote_server.connection_command, @zfs, "send", "-rnv", remote_server.full_path(source_directory)]
-					destination = [@zfs, "recv", local_server.full_path(destination_directory)]
-				end
+			def call(scope, arguments: [])
+				from_server = scope.current_server
+				master_server = scope.master_server
+				target_server = scope.target_server
+				directory = scope.directory
 				
-				return local_server, remote_server, source, destination
-			end
-			
-			def run_handler(controller, local_server, source, destination)
-				# ssh remote_server zfs send remote_path | zfs receive local_path
-				# zfs send local_path | ssh remote_server zfs recv remote_path
-				Process::Group.wait do |group|
-					input, output = IO.pipe
-					
-					group.run(*source, out: output) do |exit_status|
-						raise CommandFailure.new(source, exit_status) unless exit_status.success?
-					end
-					
-					group.run(*destination, in: input) do |exit_status|
-						raise CommandFailure.new(destination, exit_status) unless exit_status.success?
-					end
-				end
-			end
-			
-		public
-			
-			def run(controller)
-				directory = controller.directory
+				send_command = [
+					*@command,
+					"send",
+					master_server.full_path(directory)
+				]
 				
-				local_server, remote_server, source, destination = configuration(controller, controller.directory, controller.directory)
+				receive_command = [
+					*@command,
+					"receive",
+					target_server.full_path(directory)
+				]
 				
-				run_handler(controller, local_server, source, destination)
-			end
-			
-			def should_run?(controller)
-				if @direction == :push
-					return controller.current == controller.master
-				elsif @direction == :pull
-					return controller.target.local?
-				else
-					return false
-				end
+				input, output = IO.pipe
+				
+				Fiber.new do
+					master_server.run(*send_command, out: output, from: from_server)
+					output.close
+				end.resume
+				
+				target_server.run(*receive_command, in: input, from: from_server)
+				input.close
 			end
 		end
 	end

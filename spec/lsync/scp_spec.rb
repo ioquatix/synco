@@ -25,17 +25,21 @@ require 'lsync/script'
 require 'lsync/scope'
 require 'lsync/methods/scp'
 
+require_relative 'backup_script'
+
 describe LSync::Methods::SCP do
+	include_context "backup script"
+	
 	it 'should build a script with desired configuration' do
-		script = LSync::Script.build(master: :source) do
+		script = LSync::Script.build do
 			self.method = LSync::Methods::SCP.new
 			
-			server(:source) do
-				self.root = File.join(__dir__, 'source')
+			server(:master) do
+				self.root = File.join(__dir__, "tmp/master")
 			end
 			
-			server(:backup) do
-				self.root = File.join(__dir__, 'destination')
+			server(:target) do
+				self.root = File.join(__dir__, "tmp/target")
 			end
 			
 			copy(".")
@@ -49,6 +53,8 @@ describe LSync::Methods::SCP do
 		
 		LSync::Runner.new(script).call
 		
-		expect(File).to be_exist script[:backup].root
+		expect(File).to be_exist script[:target].root
+		
+		expect(Fingerprint).to be_identical(script[:master].root, script[:target].root)
 	end
 end

@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
 
 	spec.add_dependency("periodical", ">= 1.1.0")
 	spec.add_dependency("samovar", ">= 1.1.1")
-	spec.add_dependency("fingerprint", ">= 1.2.4")
+	spec.add_dependency("fingerprint", ">= 2.0")
 	spec.add_dependency("mapping", ">= 1.0.0")
 	spec.add_dependency("build-files", ">= 1.0.5")
 	spec.add_dependency("process-group", ">= 1.1.0")

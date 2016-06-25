@@ -1,4 +1,6 @@
-# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
+#!/usr/bin/env rspec
+
+# Copyright, 2015, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -18,37 +20,41 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'controller'
+require 'fingerprint'
+require 'process/group'
+require 'fileutils'
+require 'digest'
 
-module LSync
-	class AbsolutePathError < ArgumentError
+require 'lsync/script'
+
+RSpec.shared_context "backup script" do
+	def create_files(source_path, target_path)
+		FileUtils.rm_rf source_path
+		FileUtils.rm_rf target_path
+		
+		FileUtils.mkdir_p source_path
+		FileUtils.mkdir_p target_path
+		
+		(1...10).each do |i|
+			path = File.join(source_path, i.to_s)
+
+			FileUtils.mkdir(path)
+
+			text = Digest::MD5.hexdigest(i.to_s)
+
+			File.open(File.join(path, i.to_s), "w") { |f| f.write(text) }
+		end
 	end
 	
-	# A specific directory which is relative to the root of a given server. Specific configuration details
-	# such as excludes and other options may be specified.
-	class Directory < Controller
-		def initialize(path, **options)
-			super()
-			
-			@path = self.class.normalize(path)
-			
-			if @path.start_with?('/')
-				raise AbsolutePathError.new("Directory path #{path} may not be absolute!")
-			end
-		end
-
-		attr :path
-
-		def depth
-			path.count('/')
-		end
-
-		def to_s
-			@path
-		end
-		
-		def self.normalize(path)
-			path.end_with?('/') ? path : path + '/'
-		end
+	let(:tmp_path) {File.join(__dir__, 'tmp')}
+	let(:source_path) {File.join(__dir__, 'tmp/master')}
+	let(:target_path) {File.join(__dir__, 'tmp/target')}
+	
+	before(:each) do
+		create_files(source_path, target_path)
+	end
+	
+	after(:each) do
+		FileUtils.rm_rf tmp_path
 	end
 end

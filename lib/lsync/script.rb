@@ -34,7 +34,7 @@ module LSync
 	# servers and directories, and these are then combined specifically to produce the
 	# desired data replication behaviour.
 	class Script < Controller
-		def initialize(method: nil, servers: {}, directories: [], master: "localhost", logger: nil)
+		def initialize(method: nil, servers: {}, directories: [], master: :master, logger: nil)
 			super()
 			
 			@method = method
@@ -91,7 +91,7 @@ module LSync
 			else
 				# Find a server config that specifies the local host
 				@servers.values.find{|server| localhost?(server.host)}
-			end
+			end || Server.new('localhost')
 		end
 		
 		def current_server

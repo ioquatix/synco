@@ -180,13 +180,13 @@ module LSync
 			@group ||= @script_scope.group
 		end
 		
-		def run(*command, **options, &block)
+		def run(*command, from: @from, **options, &block)
 			if options[:chdir].is_a? Symbol
 				options[:chdir] = self.send(options[:chdir])
 			end
 			
 			# We are invoking a command from the given server, so we need to use the shell to connect..
-			if @from and !@from.same_host?(self)
+			if from and !from.same_host?(self)
 				command = self.connection_command + ["--"] + command
 				
 				if chdir = options.delete(:chdir)
@@ -205,7 +205,7 @@ module LSync
 			options[:err].close
 			
 			unless status.success?
-				raise CommandFailure(command, status)
+				raise CommandFailure.new(command, status)
 			end
 		end
 	end

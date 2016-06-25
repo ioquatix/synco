@@ -13,8 +13,8 @@ setups. For examples please see the main [project page][1].
 * Backup verification using `Fingerprint`.
 * Data backup redundancy controlled via DNS.
 
-[![Build Status](https://secure.travis-ci.org/ioquatix/lsync.png)](http://travis-ci.org/ioquatix/lsync)
-[![Code Climate](https://codeclimate.com/github/ioquatix/lsync.png)](https://codeclimate.com/github/ioquatix/lsync)
+[![Build Status](https://secure.travis-ci.org/ioquatix/lsync.svg)](http://travis-ci.org/ioquatix/lsync)
+[![Code Climate](https://codeclimate.com/github/ioquatix/lsync.svg)](https://codeclimate.com/github/ioquatix/lsync)
 [![Coverage Status](https://coveralls.io/repos/ioquatix/lsync/badge.svg)](https://coveralls.io/r/ioquatix/lsync)
 
 ## Installation

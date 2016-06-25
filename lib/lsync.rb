@@ -23,9 +23,9 @@ require 'socket'
 require 'set'
 require 'logger'
 
-require_relative 'version'
-require_relative 'script'
-require_relative 'context'
+require_relative 'lsync/version'
+require_relative 'lsync/script'
+require_relative 'lsync/scope'
 
 require 'fileutils'
 require 'optparse'
@@ -34,15 +34,15 @@ require 'lockfile'
 
 module LSync
 	# Run a prepared backup script using a lockfile.
-	def self.run_script(script: nil, **options, &block)
-		script = LSync::Script.new(options, &block)
+	def self.run_script(*arguments, **options, &block)
+		script = LSync::Script.build(*arguments, **options, &block)
 		lockfile_path = $0 + ".lock"
 		
-		script.on(:failure) do |exception|
-			logger.error{exception}
-			
-			raise
-		end
+		# script.on(:failure) do |exception|
+		# 	logger.error{exception}
+		# 	
+		# 	raise
+		# end
 		
 		Lockfile.new(lockfile_path, :retries => 0) do
 			Runner.new(script).call

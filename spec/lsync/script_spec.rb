@@ -27,7 +27,7 @@ require 'lsync/methods/scp'
 describe LSync::Script do
 	it 'should build a script with desired configuration' do
 		script = LSync::Script.build do
-			server(:source) do
+			server(:master) do
 			end
 			
 			server(:backup) do
@@ -43,7 +43,7 @@ describe LSync::Script do
 		expect(script).to be_frozen
 		
 		# We should have the two servers defined:
-		expect(script.servers).to include(:source, :backup)
+		expect(script.servers).to include(:master, :backup)
 		
 		# We should have a single event for backup server:
 		expect(script[:backup].events).to include(:prepare)

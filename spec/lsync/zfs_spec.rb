@@ -23,36 +23,28 @@
 require 'logger'
 require 'lsync/script'
 require 'lsync/scope'
-require 'lsync/methods/scp'
+require 'lsync/methods/zfs'
 
-require_relative 'backup_script'
-
-describe LSync::Methods::SCP do
-	include_context "backup script"
-	
-	it 'should build a script with desired configuration' do
-		script = LSync::Script.build do |script|
-			script.method = LSync::Methods::SCP.new
+describe LSync::Methods::ZFS do
+	xit 'should mirror two ZFS partitions' do
+		script = LSync::Script.build(master: :source) do |script|
+			script.method = LSync::Methods::ZFS.new
 			
 			script.server(:master) do |server|
-				server.root = master_path
+				server.host = 'hinoki.local'
+				server.root = '/tank/test/source'
 			end
 			
-			script.server(:target) do |server|
-				server.root = target_path
+			script.server(:backup) do |server|
+				server.host = 'hinoki.local'
+				server.root = '/tank/test/destination'
 			end
 			
-			script.copy(".")
-			
-			script.on(:failure) do |exception|
-				logger.error{exception}
-			end
+			script.copy("./")
 		end
-		
-		expect(script.events).to include(:failure)
 		
 		LSync::Runner.new(script).call
 		
-		expect(Fingerprint).to be_identical(master_path, target_path)
+		expect(Fingerprint).to be_identical(script[:master].root, script[:backup].root)
 	end
 end

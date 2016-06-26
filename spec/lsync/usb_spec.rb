@@ -25,34 +25,37 @@ require 'lsync/script'
 require 'lsync/scope'
 require 'lsync/methods/scp'
 
-require_relative 'backup_script'
-
-describe LSync::Methods::SCP do
-	include_context "backup script"
-	
-	it 'should build a script with desired configuration' do
+describe LSync::Methods::RSyncSnapshot do
+	xit 'should mount and backup to an attached USB stick' do
 		script = LSync::Script.build do |script|
-			script.method = LSync::Methods::SCP.new
+			script.method = LSync::Methods::RSyncSnapshot.new
 			
-			script.server(:master) do |server|
-				server.root = master_path
+			script.server(:source) do |server|
+				server.root = '/Users/samuel/'
 			end
 			
-			script.server(:target) do |server|
-				server.root = target_path
+			script.server(:destination) do |server|
+				server.mountpoint = '/Volumes/TEST/'
+				server.root = server.mountpoint + 'samuel'
+				
+				server.on(:prepare) do
+					run "lsync", "mount", self.mountpoint
+				end
+				
+				# Runs after all directories have been successfully backed up.
+				server.on(:success) do
+					run "lsync", "rotate", chdir: server.root
+					run "lsync", "prune", chdir: server.root
+				end
+				
+				server.on(:finish) do
+					run "lsync", "unmount", server.mountpoint
+				end
 			end
 			
-			script.copy(".")
-			
-			script.on(:failure) do |exception|
-				logger.error{exception}
-			end
+			script.backup('Desktop')
 		end
 		
-		expect(script.events).to include(:failure)
-		
 		LSync::Runner.new(script).call
-		
-		expect(Fingerprint).to be_identical(master_path, target_path)
 	end
 end

@@ -25,7 +25,7 @@ module LSync
 			controller = self.new(*arguments, **options)
 			
 			if block_given?
-				controller.instance_exec(&block)
+				yield(controller)
 			end
 			
 			controller.freeze

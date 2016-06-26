@@ -30,9 +30,7 @@ require 'socket'
 require 'process/group'
 
 module LSync
-	# The main backup/synchronisation mechanism is the backup script. It specifies all
-	# servers and directories, and these are then combined specifically to produce the
-	# desired data replication behaviour.
+	# The main backup/synchronisation mechanism is the backup script. It specifies all servers and directories, and these are then combined specifically to produce the desired data replication behaviour.
 	class Script < Controller
 		def initialize(method: nil, servers: {}, directories: [], master: :master, logger: nil)
 			super()

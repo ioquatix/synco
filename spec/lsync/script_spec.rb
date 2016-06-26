@@ -26,15 +26,15 @@ require 'lsync/methods/scp'
 
 describe LSync::Script do
 	it 'should build a script with desired configuration' do
-		script = LSync::Script.build do
-			server(:master) do
+		script = LSync::Script.build do |script|
+			script.server(:master) do |server|
 			end
 			
-			server(:backup) do
-				self.root = '/tank/backups/servers/test'
+			script.server(:backup) do |server|
+				server.root = 'backup'
 				
-				on(:prepare) do
-					run "lsync", "mount", chdir: :root
+				server.on(:prepare) do
+					run "lsync", "mount", chdir: self.root
 				end
 			end
 		end

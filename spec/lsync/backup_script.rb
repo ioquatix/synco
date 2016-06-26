@@ -28,15 +28,15 @@ require 'digest'
 require 'lsync/script'
 
 RSpec.shared_context "backup script" do
-	def create_files(source_path, target_path)
-		FileUtils.rm_rf source_path
+	def create_files(master_path, target_path)
+		FileUtils.rm_rf master_path
 		FileUtils.rm_rf target_path
 		
-		FileUtils.mkdir_p source_path
+		FileUtils.mkdir_p master_path
 		FileUtils.mkdir_p target_path
 		
 		(1...10).each do |i|
-			path = File.join(source_path, i.to_s)
+			path = File.join(master_path, i.to_s)
 
 			FileUtils.mkdir(path)
 
@@ -47,11 +47,11 @@ RSpec.shared_context "backup script" do
 	end
 	
 	let(:tmp_path) {File.join(__dir__, 'tmp')}
-	let(:source_path) {File.join(__dir__, 'tmp/master')}
+	let(:master_path) {File.join(__dir__, 'tmp/master')}
 	let(:target_path) {File.join(__dir__, 'tmp/target')}
 	
 	before(:each) do
-		create_files(source_path, target_path)
+		create_files(master_path, target_path)
 	end
 	
 	after(:each) do

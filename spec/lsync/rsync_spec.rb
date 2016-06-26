@@ -25,50 +25,54 @@ require 'lsync/script'
 require 'lsync/scope'
 require 'lsync/methods/rsync'
 
+require_relative 'backup_script'
+
 describe LSync::Methods::RSync do
+	include_context "backup script"
+	
 	it 'should copy files using rsync' do
-		script = LSync::Script.build(master: :source) do
-			self.method = LSync::Methods::RSyncSnapshot.new
+		script = LSync::Script.build do |script|
+			script.method = LSync::Methods::RSync.new
 			
-			server(:source) do
-				self.root = File.join(__dir__, 'source')
+			script.server(:master) do |server|
+				server.root = master_path
 			end
 			
-			server(:backup) do
-				self.root = File.join(__dir__, 'destination')
+			script.server(:backup) do |server|
+				server.root = target_path
 			end
 			
-			copy(".")
+			script.copy(".")
 		end
 		
 		LSync::Runner.new(script).call
 		
-		expect(File).to be_exist script[:backup].root
+		expect(Fingerprint).to be_identical(master_path, target_path)
 	end
 	
 	it 'should copy files using rsync snapshot' do
-		script = LSync::Script.build(master: :source) do
-			self.method = LSync::Methods::RSyncSnapshot.new
+		script = LSync::Script.build do |script|
+			script.method = LSync::Methods::RSyncSnapshot.new
 			
-			server(:source) do
-				self.root = File.join(__dir__, 'source')
+			script.server(:master) do |server|
+				server.root = master_path
 			end
 			
-			server(:backup) do
-				self.root = File.join(__dir__, 'destination-rsyncsnapshot')
+			script.server(:backup) do |server|
+				server.root = target_path
 				
-				on(:success) do
-					target_server.run "lsync", "rotate", chdir: :root
-					target_server.run "lsync", "prune", chdir: :root
+				server.on(:success) do
+					target_server.run "lsync", "rotate", chdir: target_server.root
+					target_server.run "lsync", "prune", chdir: target_server.root
 				end
 			end
 			
-			copy(".")
+			script.copy(".")
 		end
 		
 		LSync::Runner.new(script).call
 		
-		expect(File).to be_exist script[:backup].root
+		expect(Fingerprint).to be_identical(master_path, File.join(target_path, LSync::LATEST_NAME))
 	end
 
 end

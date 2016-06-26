@@ -186,17 +186,13 @@ module Synco
 		end
 		
 		def run(*command, from: @from, **options)
-			if options[:chdir].is_a? Symbol
-				options[:chdir] = self.send(options[:chdir])
-			end
-			
 			# We are invoking a command from the given server, so we need to use the shell to connect..
 			if from and !from.same_host?(self)
-				command = self.connection_command + ["--"] + command
-				
 				if chdir = options.delete(:chdir)
 					command = ["synco", "--root", chdir, "spawn"] + command
 				end
+				
+				command = self.connection_command + ["--"] + command
 			end
 			
 			logger.info("shell") {[command, options]}

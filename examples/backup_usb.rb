@@ -21,8 +21,8 @@ Synco::run_script do |script|
 		
 		# Runs after all directories have been successfully backed up.
 		on(:success) do
-			run "synco", "rotate", chdir: self.root
-			run "synco", "prune", chdir: self.root
+			run "synco", "rotate", chdir: server.root
+			run "synco", "prune", chdir: server.root
 		end
 		
 		on(:finish) do

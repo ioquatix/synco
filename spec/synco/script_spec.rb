@@ -34,7 +34,7 @@ describe Synco::Script do
 				server.root = 'backup'
 				
 				server.on(:prepare) do
-					run "synco", "mount", chdir: self.root
+					run "synco", "mount", chdir: server.root
 				end
 			end
 		end

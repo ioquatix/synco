@@ -4,9 +4,9 @@ require 'rubygems'
 
 require 'ruby-growl'
 
-require 'lsync'
-require 'lsync/shells/ssh'
-require 'lsync/methods/rsync'
+require 'synco'
+require 'synco/shells/ssh'
+require 'synco/methods/rsync'
 
 # Check we've got two paths for sync.
 unless ARGV.size == 2
@@ -14,11 +14,11 @@ unless ARGV.size == 2
 	exit(255)
 end
 
-$growl = Growl.new "localhost", "LSync", ["Backup Status"]
+$growl = Growl.new "localhost", "Synco", ["Backup Status"]
 $growl.register
 
-$script = LSync::Script.new do |script|
-	script.method = LSync::Methods::RSyncSnapshot.new(:push, :arguments => ["--archive", "--compress", "--stats"])
+$script = Synco::Script.new do |script|
+	script.method = Synco::Methods::RSyncSnapshot.new(:push, :arguments => ["--archive", "--compress", "--stats"])
 	
 	script.master = :src
 	

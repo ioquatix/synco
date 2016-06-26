@@ -2,11 +2,11 @@
 
 require 'rubygems'
 
-require 'lsync'
-require 'lsync/methods/rsync'
+require 'synco'
+require 'synco/methods/rsync'
 
-LSync::run_script do |script|
-	script.method = LSync::Methods::RSync.new(:push, :arguments => ["--archive", "--delete"])
+Synco::run_script do |script|
+	script.method = Synco::Methods::RSync.new(:push, :arguments => ["--archive", "--delete"])
 	
 	script.master = :src
 	

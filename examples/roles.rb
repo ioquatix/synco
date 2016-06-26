@@ -2,12 +2,12 @@
 
 require 'rubygems'
 
-require 'lsync'
-require 'lsync/shells/ssh'
-require 'lsync/methods/rsync'
+require 'synco'
+require 'synco/shells/ssh'
+require 'synco/methods/rsync'
 
-$script = LSync::Script.new do |script|
-	script.method = LSync::Methods::RSyncSnapshot.new(:pull, :arguments => ["--archive", "--compress", "--stats"])
+$script = Synco::Script.new do |script|
+	script.method = Synco::Methods::RSyncSnapshot.new(:pull, :arguments => ["--archive", "--compress", "--stats"])
 	script.actions_path << Pathname.new(__FILE__).dirname + "actions"
 	script.master = "server.example.com"
 	

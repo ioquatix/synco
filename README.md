@@ -1,11 +1,11 @@
-# LSync
+# Synco
 
-LSync is a tool for scripted synchronization and backups. It provides a custom Ruby
+Synco is a tool for scripted synchronization and backups. It provides a custom Ruby
 DSL for describing complex backup and synchronization tasks. It is designed to give
 maximum flexibility while reducing the complexity of describing complex multi-server
 setups. For examples please see the main [project page][1].
 
-[1]: http://www.codeotaku.com/projects/lsync/index
+[1]: http://www.codeotaku.com/projects/synco/index
 
 * Single and multi-server data synchronization.
 * Incremental backups both locally and remotely.
@@ -13,15 +13,15 @@ setups. For examples please see the main [project page][1].
 * Backup verification using `Fingerprint`.
 * Data backup redundancy controlled via DNS.
 
-[![Build Status](https://secure.travis-ci.org/ioquatix/lsync.svg)](http://travis-ci.org/ioquatix/lsync)
-[![Code Climate](https://codeclimate.com/github/ioquatix/lsync.svg)](https://codeclimate.com/github/ioquatix/lsync)
-[![Coverage Status](https://coveralls.io/repos/ioquatix/lsync/badge.svg)](https://coveralls.io/r/ioquatix/lsync)
+[![Build Status](https://secure.travis-ci.org/ioquatix/synco.svg)](http://travis-ci.org/ioquatix/synco)
+[![Code Climate](https://codeclimate.com/github/ioquatix/synco.svg)](https://codeclimate.com/github/ioquatix/synco)
+[![Coverage Status](https://coveralls.io/repos/ioquatix/synco/badge.svg)](https://coveralls.io/r/ioquatix/synco)
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-	gem 'lsync'
+	gem 'synco'
 
 And then execute:
 
@@ -29,11 +29,11 @@ And then execute:
 
 Or install it yourself as:
 
-	$ gem install lsync
+	$ gem install synco
 
 ## Usage
 
-LSync imposes a particular structure regarding the organisation of backup scripts:
+Synco imposes a particular structure regarding the organisation of backup scripts:
 Backup scripts involve a set of servers and directories. A server is a logical unit 
 where files are available or stored. Directories are specific places within servers.
 
@@ -41,12 +41,12 @@ A simple backup script might look something like this:
 
 	#!/usr/bin/env ruby
 
-	require 'lsync'
-	require 'lsync/shells/ssh'
-	require 'lsync/methods/rsync'
+	require 'synco'
+	require 'synco/shells/ssh'
+	require 'synco/methods/rsync'
 
-	LSync::run_script do |script|
-		script.method = LSync::Methods::RSync.new(:push, :arguments => ["--archive", "--delete"])
+	Synco::run_script do |script|
+		script.method = Synco::Methods::RSync.new
 		
 		# Set :src to be the master server
 		script.master = :src
@@ -66,9 +66,9 @@ A simple backup script might look something like this:
 
 ### ZFS Snapshots
 
-*This part of LSync is still under heavy development*
+*This part of Synco is still under heavy development*
 
-LSync can manage synchronization and backups of ZFS partitions. However, to use the standard tools, it is necessary to enable `zfs_admin_snapshot`, in `/etc/modprobe.d/zfs.conf`:
+Synco can manage synchronization and backups of ZFS partitions. However, to use the standard tools, it is necessary to enable `zfs_admin_snapshot`, in `/etc/modprobe.d/zfs.conf`:
 
 	options zfs zfs_admin_snapshot=1
 
@@ -88,7 +88,7 @@ Propagate user permissions for the ZFS partition:
 
 Released under the MIT license.
 
-Copyright, 2015, by [Samuel G. D. Williams](http://www.codeotaku.com/samuel-williams).
+Copyright, 2016, by [Samuel G. D. Williams](http://www.codeotaku.com/samuel-williams).
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

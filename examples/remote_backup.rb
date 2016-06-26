@@ -2,9 +2,9 @@
 
 require 'rubygems'
 
-require 'lsync'
-require 'lsync/shells/ssh'
-require 'lsync/methods/rsync'
+require 'synco'
+require 'synco/shells/ssh'
+require 'synco/methods/rsync'
 
 TEST_SCRIPT = <<EOF
 #!/usr/bin/env ruby
@@ -13,8 +13,8 @@ puts "Hello World " + ARGV.inspect
 
 EOF
 
-$script = LSync::Script.new do |script|
-	script.method = LSync::Methods::RSyncSnapshot.new(:push, :arguments => ["--archive", "--compress", "--stats"])
+$script = Synco::Script.new do |script|
+	script.method = Synco::Methods::RSyncSnapshot.new(:push, :arguments => ["--archive", "--compress", "--stats"])
 	
 	server("localhost") do |server|
 		server.roles << :primary

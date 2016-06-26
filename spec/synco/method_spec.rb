@@ -37,7 +37,7 @@ describe Synco::Methods::SCP do
 	
 	let(:group) {Process::Group.new}
 	let(:script_scope) {Synco::ScriptScope.new(script, logger, group)}
-	let(:sync_scope) {Synco::SyncScope.new(script_scope, target_server)}
+	let(:sync_scope) {Synco::TargetScope.new(script_scope, target_server)}
 	
 	let(:directory) {Synco::Directory.new(".")}
 	let(:directory_scope) {Synco::DirectoryScope.new(sync_scope, directory)}

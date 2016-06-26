@@ -97,7 +97,8 @@ module Synco
 
 			@script.try(self) do
 				# This allows events to run on the master server if specified, before running any backups.
-				@master_server.try(self) do
+				
+				@master_server.try(master_target_server) do
 					method.try(self) do
 						logger.info "Running backups for server #{@current_server}..."
 						
@@ -108,6 +109,10 @@ module Synco
 		end
 
 		private
+		
+		def master_target_server
+			TargetScope.new(self, @master_server)
+		end
 
 		def target_servers
 			@script.servers.each do |name, server|
@@ -121,7 +126,7 @@ module Synco
 		# This function runs the method for each directory and server combination specified.
 		def run_servers(group)
 			target_servers do |server|
-				sync_scope = SyncScope.new(self, server)
+				sync_scope = TargetScope.new(self, server)
 
 				logger.info "===== Processing ====="
 				logger.info "[Master]: #{master_server}"
@@ -180,7 +185,7 @@ module Synco
 			@group ||= @script_scope.group
 		end
 		
-		def run(*command, from: @from, **options, &block)
+		def run(*command, from: @from, **options)
 			if options[:chdir].is_a? Symbol
 				options[:chdir] = self.send(options[:chdir])
 			end
@@ -210,17 +215,21 @@ module Synco
 		end
 	end
 	
-	class SyncScope < DelegateClass(ScriptScope)
+	class TargetScope < DelegateClass(ScriptScope)
 		def initialize(script_scope, target)
 			super(script_scope)
 			
 			@target_server = ServerScope.new(target, script_scope, script_scope.current_server)
 		end
 		
+		def run(*arguments)
+			@target_server.run(*arguments)
+		end
+		
 		attr :target_server
 	end
 	
-	class DirectoryScope < DelegateClass(SyncScope)
+	class DirectoryScope < DelegateClass(TargetScope)
 		def initialize(sync_scope, directory)
 			super(sync_scope)
 			

@@ -10,7 +10,7 @@ setups. For examples please see the main [project page][1].
 * Single and multi-server data synchronization.
 * Incremental backups both locally and remotely.
 * Backup staging and coordination.
-* Backup verification using `Fingerprint`.
+* Backup verification using [Fingerprint](https://github.com/ioquatix/fingerprint).
 * Data backup redundancy controlled via DNS.
 
 [![Build Status](https://secure.travis-ci.org/ioquatix/synco.svg)](http://travis-ci.org/ioquatix/synco)

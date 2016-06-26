@@ -27,6 +27,8 @@ require 'digest'
 
 require 'synco/script'
 
+SYNCO_PATH = File.expand_path("../../bin/synco", __dir__)
+
 RSpec.shared_context "backup script" do
 	def create_files(master_path, target_path)
 		FileUtils.rm_rf master_path

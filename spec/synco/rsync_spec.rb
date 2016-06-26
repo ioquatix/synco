@@ -62,8 +62,8 @@ describe Synco::Methods::RSync do
 				server.root = target_path
 				
 				server.on(:success) do
-					target_server.run "synco", "rotate", chdir: target_server.root
-					target_server.run "synco", "prune", chdir: target_server.root
+					target_server.run SYNCO_PATH, "rotate", chdir: target_server.root
+					target_server.run SYNCO_PATH, "prune", chdir: target_server.root
 				end
 			end
 			

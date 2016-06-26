@@ -1,9 +1,6 @@
 # Synco
 
-Synco is a tool for scripted synchronization and backups. It provides a custom Ruby
-DSL for describing complex backup and synchronization tasks. It is designed to give
-maximum flexibility while reducing the complexity of describing complex multi-server
-setups. For examples please see the main [project page][1].
+Synco is a tool for scripted synchronization and backups. It provides a custom Ruby DSL for describing complex backup and synchronization tasks. It is designed to give maximum flexibility while reducing the complexity of describing complex multi-server setups. For examples please see the main [project page][1].
 
 [1]: http://www.codeotaku.com/projects/synco/index
 
@@ -33,9 +30,7 @@ Or install it yourself as:
 
 ## Usage
 
-Synco imposes a particular structure regarding the organisation of backup scripts:
-Backup scripts involve a set of servers and directories. A server is a logical unit 
-where files are available or stored. Directories are specific places within servers.
+Synco imposes a particular structure regarding the organisation of backup scripts: Backup scripts involve a set of servers and directories. A server is a logical unit where files are available or stored. Directories are specific places within servers.
 
 A simple backup script might look something like this:
 
@@ -48,20 +43,44 @@ A simple backup script might look something like this:
 	Synco::run_script do |script|
 		script.method = Synco::Methods::RSync.new
 		
-		# Set :src to be the master server
-		script.master = :src
-		
-		server(:src) do |server|
+		server(:master) do |server|
 			server.host = "server.example.com"
 			server.root = "/"
 		end
 		
-		server(:dst) do |server|
+		server(:backup) do |server|
 			server.host = "backup.example.com"
 			server.root = "/"
 		end
 		
 		backup('etc', 'var', 'srv', 'home')
+	end
+
+### RSync Snapshots
+
+Building on the above backup, you can use `Synco::Methods::RSyncSnapshot` which supports snapshot based backups. It uses `--link-dest` to hardlink files using RSync and copies files into a sub-directory called `latest.snapshot`. Finally, you are expected to rotate and prune these backups as required:
+
+	server(:backup) do |server|
+		server.host = "backup.example.com"
+		server.root = "/"
+		
+		server.on(:success) do
+			run "synco", "rotate", chdir: target_server.root
+			run "synco", "prune", chdir: target_server.root
+		end
+	end
+
+### MySQL Backups
+
+If you'd like to dump data before running the backup, it's possible using the event handling mechanisms:
+
+	server(:master) do |server|
+		server.host = "server.example.com"
+		server.root = "/"
+		
+		server.on(:prepare) do
+			run '/etc/lsync/mysql-backup.sh'
+		end
 	end
 
 ### ZFS Snapshots

@@ -110,6 +110,7 @@ module Synco
 					*@command,
 					*@arguments,
 					*connect_arguments(master_server, target_server),
+					*link_arguments,
 					master_server.connection_string(directory, on: master_server),
 					target_server.connection_string(incremental_path, on: master_server)
 				)

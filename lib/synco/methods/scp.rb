@@ -24,7 +24,7 @@ module Synco
 	module Methods
 		class SCP < Method
 			def default_command
-				['scp', '-prB']
+				['scp', '-pr']
 			end
 			
 			def call(scope)

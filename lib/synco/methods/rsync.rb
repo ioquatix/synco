@@ -93,15 +93,25 @@ module Synco
 				@options[:latest_name] || LATEST_NAME
 			end
 			
+			def compute_incremental_path(directory)
+				incremental_path = File.join(snapshot_name, directory.path)
+			end
+			
+			def compute_link_arguments(directory, incremental_path)
+				depth = Directory.depth(incremental_path)
+				
+				latest_path = File.join("../" * depth, latest_name, directory.path)
+				
+				return ['--link-dest', latest_path]
+			end
+			
 			def call(scope)
 				master_server = scope.master_server
 				target_server = scope.target_server
 				
 				directory = scope.directory
-				latest_path = File.join("../" * directory.depth, latest_name, directory.path)
-				
-				link_arguments = ['--link-dest', latest_path]
-				incremental_path = File.join(snapshot_name, directory.path)
+				incremental_path = compute_incremental_path(directory)
+				link_arguments = compute_link_arguments(directory, incremental_path)
 				
 				# Create the destination backup directory
 				target_server.run('mkdir', '-p', target_server.full_path(incremental_path))

@@ -40,7 +40,7 @@ module Synco
 		attr :path
 
 		def depth
-			path.count('/')
+			self.class.depth(@path)
 		end
 
 		def to_s
@@ -49,6 +49,10 @@ module Synco
 		
 		def self.normalize(path)
 			path.end_with?('/') ? path : path + '/'
+		end
+		
+		def self.depth(path)
+			path.count('/')
 		end
 	end
 end

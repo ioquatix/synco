@@ -24,8 +24,12 @@ module Synco
 	module Shells
 		# SSH shell provides access to a remote server using SSH.
 		class SSH < Shell
+			def default_command
+				['ssh', '-o', 'BatchMode yes']
+			end
+			
 			def initialize(command: 'ssh', **options)
-				super(command, options)
+				super(command, **options)
 			end
 			
 			# The connection options for ssh

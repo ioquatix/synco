@@ -21,10 +21,10 @@
 require 'pathname'
 
 module Synco
-	# A shell provides access to a server, typically to run an instance of `ruby`.
+	# A shell provides access to a server, typically to run commands.
 	class Shell
 		def initialize(*command, **options)
-			@command = command
+			@command = command.empty? ? default_command : command
 			@options = options
 		end
 		

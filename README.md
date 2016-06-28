@@ -37,7 +37,6 @@ A simple backup script might look something like this:
 	#!/usr/bin/env ruby
 
 	require 'synco'
-	require 'synco/shells/ssh'
 	require 'synco/methods/rsync'
 
 	Synco::run_script do |script|
@@ -58,19 +57,37 @@ A simple backup script might look something like this:
 
 ### RSync Snapshots
 
-Building on the above backup, you can use `Synco::Methods::RSyncSnapshot` which supports snapshot based backups. It uses `--link-dest` to hardlink files using RSync and copies files into a sub-directory called `latest.snapshot`. Finally, you are expected to rotate and prune these backups as required:
+Building on the above backup, you can use `Synco::Methods::RSyncSnapshot` which supports snapshot based backups. It creates a snapshot into a sub-directory called `latest.snapshot` and uses RSync's `--link-dest` to hard-link files when unchanged. Finally, you are expected to rotate and prune these backups as required, using the `synco` command:
 
 	server(:backup) do |server|
 		server.host = "backup.example.com"
 		server.root = "/"
 		
 		server.on(:success) do
-			run "synco", "rotate", chdir: target_server.root
-			run "synco", "prune", chdir: target_server.root
+			run 'synco', '--root', target_server.root, 'rotate'
+			run 'synco', '--root', target_server.root, 'prune'
 		end
 	end
 
-### MySQL Backups
+### Mounting Disks
+
+Synco supports mounting disks before the backup begins and unmounting them after done.
+
+	server(:destination) do |server|
+		self.mountpoint = '/Volumes/Backups'
+		self.root = File.join(server.mountpoint, 'Laptop')
+		
+		on(:prepare) do
+			# Depending on the platform, you may need to specify the device too:
+			run 'synco', 'mount', self.mountpoint #, '/dev/hd1'
+		end
+		
+		on(:finish) do
+			run 'synco', 'unmount', self.mountpoint
+		end
+	end
+
+### Database Backups
 
 If you'd like to dump data before running the backup, it's possible using the event handling mechanisms:
 
@@ -79,7 +96,8 @@ If you'd like to dump data before running the backup, it's possible using the ev
 		server.root = "/"
 		
 		server.on(:prepare) do
-			run '/etc/lsync/mysql-backup.sh'
+			# Dump MySQL to /srv/mysql
+			run '/etc/lsync/mysql-backup.sh', '/srv/mysql'
 		end
 	end
 

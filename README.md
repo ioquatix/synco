@@ -110,7 +110,7 @@ It is possible to make a [cryptographic checksum of the data](https://github.com
 		server.root = "/"
 		
 		server.on(:success) do
-			# Dump MySQL to /srv/mysql
+			# Run fingerprint on the backup data:
 			run 'fingerprint', '--root', target_server.root, 'analyze'
 		end
 	end

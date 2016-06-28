@@ -79,7 +79,7 @@ module Synco
 				option "--format <name>", "Set the name of the backup rotations, including strftime expansions.", default: BACKUP_NAME
 				option "--latest <name>", "The name of the latest backup symlink.", default: LATEST_NAME
 				
-				option "--keep <new|old>", "Keep the younder or older backups within the same period division", default: 'old'
+				option "--keep <new|old>", "Keep the younger or older backups within the same period division", default: 'old'
 				
 				option "--dry", "Print out what would be done rather than doing it."
 			end

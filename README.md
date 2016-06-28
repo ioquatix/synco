@@ -101,6 +101,20 @@ If you'd like to dump data before running the backup, it's possible using the ev
 		end
 	end
 
+### Fingerprint Integration
+
+It is possible to make a [cryptographic checksum of the data](https://github.com/ioquatix/fingerprint). On a filesystem that supports snapshots, you can do this before the data is copied. For traditional filesystems, you generally need to do this afterwards.
+
+	server(:master) do |server|
+		server.host = "server.example.com"
+		server.root = "/"
+		
+		server.on(:success) do
+			# Dump MySQL to /srv/mysql
+			run 'fingerprint', '--root', target_server.root, 'analyze'
+		end
+	end
+
 ### ZFS Snapshots
 
 *This part of Synco is still under heavy development*

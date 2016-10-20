@@ -25,7 +25,7 @@ module Synco
 		# SSH shell provides access to a remote server using SSH.
 		class SSH < Shell
 			def default_command
-				['ssh', '-o', 'BatchMode=yes']
+				['ssh']
 			end
 			
 			# The connection options for ssh
@@ -36,20 +36,22 @@ module Synco
 			# [`:compression`] Enable compression.
 			# [`:user`]        Connect as a specific user.
 			def command_arguments
-				@options.collect do |k,v|
-					case(k.to_sym)
+				@options.collect do |key,value|
+					case key
 					when :port
-						['-p', v.to_s]
+						['-p', value.to_s]
 					when :key
-						['-i', v]
+						['-i', value]
 					when :keys
-						v.collect { |key_path| ['-i', key_path] } 
+						value.collect { |key_path| ['-i', key_path] } 
 					when :timeout
-						['-o', "ConnectTimeout #{v.to_i}".to_cmd]
+						['-o', "ConnectTimeout=#{value.to_i}"]
+					when :batch_mode
+						['-o', "BatchMode=#{value ? 'yes' : 'no'}"]
 					when :compression
-						['-C'] if v
+						['-C'] if value
 					when :user
-						['-l', v.to_s]
+						['-l', value.to_s]
 					end
 				end.flatten.compact
 			end

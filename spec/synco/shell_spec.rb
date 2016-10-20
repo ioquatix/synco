@@ -31,4 +31,12 @@ module Synco::ShellSpec
 			expect(subject.connection_command(server)).to be == ['ssh', 'localhost']
 		end
 	end
+	
+	describe Synco::Shells::SSH.new(batch_mode: true) do
+		let(:server) {Synco::Server.new('localhost')}
+		
+		it 'should generate a connection command with options' do
+			expect(subject.connection_command(server)).to be == ['ssh', '-o', 'BatchMode=yes', 'localhost']
+		end
+	end
 end

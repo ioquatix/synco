@@ -32,5 +32,9 @@ module Synco
 		def connection_command(server, *arguments)
 			[*@command, *arguments, server.host]
 		end
+		
+		def to_s
+			"<#{self.class} #{@command} #{@options.inspect}>"
+		end
 	end
 end

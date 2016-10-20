@@ -39,10 +39,18 @@ module Synco
 	end
 	
 	class Runner
-		def initialize(*scripts, loggger: nil)
+		def initialize(*scripts, logger: nil, verbose: false)
 			@scripts = scripts
 			
-			@logger = logger || Logger.new($stderr).tap{|logger| logger.formatter = CompactFormatter.new}
+			@logger = logger || Logger.new($stderr).tap do |logger|
+				logger.formatter = CompactFormatter.new
+				
+				if verbose or ENV['SYNCO_VERBOSE']
+					logger.level = Logger::DEBUG
+				else
+					logger.level = Logger::INFO
+				end
+			end
 		end
 		
 		attr :scripts
@@ -149,6 +157,7 @@ module Synco
 	class LogPipe < DelegateClass(IO)
 		def initialize(logger, level = :info)
 			@input, @output = IO.pipe
+			@logger = logger
 			
 			super(@output)
 			
@@ -201,6 +210,7 @@ module Synco
 			options[:err] ||= LogPipe.new(logger, :error)
 			
 			status = self.group.spawn(*command, **options)
+			logger.debug{"Process finished: #{status}."}
 			
 			options[:out].close
 			options[:err].close

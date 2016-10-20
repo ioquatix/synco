@@ -72,9 +72,9 @@ module Synco
 				option "--hourly <count>", "Set the number of hourly backups to keep.", default: 24
 				option "--daily <count>", "Set the number of daily backups to keep.", default: 7*4
 				option "--weekly <count>", "Set the number of weekly backups to keep.", default: 52
-				option "--monthly <count>", "Set the number of weekly backups to keep.", default: 12*3
-				option "--quarterly <count>", "Set the number of weekly backups to keep.", default: 4*10
-				option "--yearly <count>", "Set the number of weekly backups to keep.", default: 20
+				option "--monthly <count>", "Set the number of monthly backups to keep.", default: 12*3
+				option "--quarterly <count>", "Set the number of quaterly backups to keep.", default: 4*10
+				option "--yearly <count>", "Set the number of yearly backups to keep.", default: 20
 				
 				option "--format <name>", "Set the name of the backup rotations, including strftime expansions.", default: BACKUP_NAME
 				option "--latest <name>", "The name of the latest backup symlink.", default: LATEST_NAME

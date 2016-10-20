@@ -19,5 +19,5 @@
 # THE SOFTWARE.
 
 module Synco
-	VERSION = "3.0.0-rc5"
+	VERSION = "3.0.0-rc6"
 end

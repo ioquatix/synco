@@ -36,5 +36,16 @@ module Synco
 		def to_s
 			"<#{self.class} #{@command} #{@options.inspect}>"
 		end
+		
+		def escape(command)
+			case command
+			when Array
+				collect{|arg| escape(arg)}.join(' ')
+			when String
+				command =~ /\s|"|'/ ? command.dump : command
+			else
+				escape(command.to_s)
+			end
+		end
 	end
 end

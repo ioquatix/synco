@@ -56,7 +56,7 @@ module Synco
 			
 			arguments = arguments.flatten.collect(&:to_s)
 			
-			buffer << Rainbow(Shellwords.join(arguments)).bright.blue
+			buffer << Rainbow(arguments.shelljoin).bright.blue
 			
 			if options
 				buffer << chdir_string(options)

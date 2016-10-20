@@ -64,7 +64,7 @@ module Synco
 					command.pop
 				end
 
-				return ['-e', Shellwords.join(command)]
+				return ['-e', master_server.shell.escape(command)]
 			end
 			
 			def call(scope)

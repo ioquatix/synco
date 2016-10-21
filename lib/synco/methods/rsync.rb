@@ -79,6 +79,12 @@ module Synco
 				return ['-e', escape(command)]
 			end
 			
+			def filter_arguments(directory)
+				if excludes_path = directory.options[:exclude_from]
+					['--exclude-from', excludes_path]
+				end
+			end
+			
 			def call(scope)
 				master_server = scope.master_server
 				target_server = scope.target_server
@@ -87,6 +93,7 @@ module Synco
 				master_server.run(
 					*@command,
 					*@arguments,
+					*filter_arguments(directory),
 					*connect_arguments(master_server, target_server),
 					master_server.connection_string(directory, on: master_server),
 					target_server.connection_string(directory, on: master_server)
@@ -131,6 +138,7 @@ module Synco
 				master_server.run(
 					*@command,
 					*@arguments,
+					*filter_arguments(directory),
 					*connect_arguments(master_server, target_server),
 					*link_arguments,
 					master_server.connection_string(directory, on: master_server),

@@ -35,9 +35,12 @@ module Synco
 			if @path.start_with?('/')
 				raise AbsolutePathError.new("Directory path #{path} may not be absolute!")
 			end
+			
+			@options = options
 		end
 
 		attr :path
+		attr :options
 
 		def depth
 			self.class.depth(@path)

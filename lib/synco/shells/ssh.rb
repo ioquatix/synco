@@ -36,7 +36,7 @@ module Synco
 			# [`:compression`] Enable compression.
 			# [`:user`]        Connect as a specific user.
 			def command_arguments
-				@options.collect do |key,value|
+				@options.reject{|_,value| value.nil?}.collect do |key,value|
 					case key
 					when :port
 						['-p', value.to_s]

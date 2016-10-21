@@ -45,9 +45,9 @@ module Synco
 					when :keys
 						value.collect { |key_path| ['-i', key_path] } 
 					when :timeout
-						['-o', "ConnectTimeout #{value.to_i}"]
+						['-o', "ConnectTimeout=#{value.to_i}"]
 					when :batch_mode
-						['-o', "BatchMode #{value ? 'yes' : 'no'}"]
+						['-o', "BatchMode=#{value ? 'yes' : 'no'}"]
 					when :compression
 						['-C'] if value
 					when :user

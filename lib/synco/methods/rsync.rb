@@ -51,6 +51,18 @@ module Synco
 				['rsync', '--archive', '--stats']
 			end
 			
+			# This escapes the -e argument to rsync, as it's argv parser is a bit.. unique.
+			def escape(command)
+				case command
+				when Array
+					command.collect{|arg| escape(arg)}.join(' ')
+				when String
+					command =~ /\s|"|'/ ? command.dump : command
+				else
+					escape(command.to_s)
+				end
+			end
+			
 			def connect_arguments(master_server, target_server)
 				return [] if master_server.same_host?(target_server)
 				
@@ -64,7 +76,7 @@ module Synco
 					command.pop
 				end
 
-				return ['-e', master_server.shell.escape(command)]
+				return ['-e', escape(command)]
 			end
 			
 			def call(scope)

@@ -74,6 +74,11 @@ describe Synco::Methods::RSync do
 		
 		expect(Fingerprint).to be_identical(master_path, File.join(target_path, Synco::LATEST_NAME))
 	end
+end
 
+describe Synco::Methods::RSyncSnapshot do
+	it 'should generate correct command for ssh shell' do
+		expect(subject.escape(['ssh', '-o', 'BatchMode=yes'])).to be == 'ssh -o BatchMode=yes'
+	end
 end
 	

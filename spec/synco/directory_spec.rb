@@ -1,3 +1,5 @@
+#!/usr/bin/env rspec
+
 # Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -18,48 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require_relative 'controller'
+require 'synco/directory'
 
-module Synco
-	class AbsolutePathError < ArgumentError
-	end
-	
-	# A specific directory which is relative to the root of a given server. Specific configuration details
-	# such as excludes and other options may be specified.
-	class Directory < Controller
-		def initialize(path, **options)
-			super()
-			
-			@path = self.class.normalize(path)
-			
-			if @path.start_with?('/')
-				raise AbsolutePathError.new("Directory path #{path} may not be absolute!")
-			end
-			
-			@options = options
-		end
-		
-		attr :path
-		attr :options
-		
-		def arguments
-			@options[:arguments]
-		end
-		
-		def depth
-			self.class.depth(@path)
-		end
-
-		def to_s
-			@path
-		end
-		
-		def self.normalize(path)
-			path.end_with?('/') ? path : path + '/'
-		end
-		
-		def self.depth(path)
-			path.count('/')
-		end
+describe Synco::Directory.new(".", arguments: ['--foo']) do
+	it "should have arguments" do
+		expect(subject.arguments).to include('--foo')
 	end
 end

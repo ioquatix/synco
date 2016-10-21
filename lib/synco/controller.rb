@@ -35,6 +35,7 @@ module Synco
 		
 		def initialize
 			@events = Hash.new{|hash,key| hash[key] = Array.new}
+			@aborted = false
 		end
 		
 		def freeze
@@ -63,7 +64,7 @@ module Synco
 				handled = true
 
 				if scope
-					scope.instance_exec *args, &handler
+					scope.instance_exec(*args, &handler)
 				else
 					handler.call
 				end

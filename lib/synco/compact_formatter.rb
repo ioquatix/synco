@@ -51,7 +51,7 @@ module Synco
 		def format_command(arguments, buffer)
 			arguments = arguments.dup
 			
-			environment = arguments.first.is_a?(Hash) ? arguments.shift : nil
+			# environment = arguments.first.is_a?(Hash) ? arguments.shift : nil
 			options = arguments.last.is_a?(Hash) ? arguments.pop : nil
 			
 			arguments = arguments.flatten.collect(&:to_s)

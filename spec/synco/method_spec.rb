@@ -39,7 +39,7 @@ describe Synco::Methods::SCP do
 	let(:script_scope) {Synco::ScriptScope.new(script, logger, group)}
 	let(:sync_scope) {Synco::TargetScope.new(script_scope, target_server)}
 	
-	let(:directory) {Synco::Directory.new(".")}
+	let(:directory) {Synco::Directory.new(".", arguments: ['--archive'])}
 	let(:directory_scope) {Synco::DirectoryScope.new(sync_scope, directory)}
 	
 	# This example shows all the state which goes into one single method invocation:
@@ -50,8 +50,6 @@ describe Synco::Methods::SCP do
 		expect(directory_scope.master_server).to_not be == nil
 		expect(directory_scope.target_server).to_not be == nil
 		expect(directory_scope.current_server).to_not be == nil
-
-		result = nil
 
 		group.wait do
 			Fiber.new do

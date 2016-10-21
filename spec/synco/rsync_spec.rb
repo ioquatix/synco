@@ -42,7 +42,7 @@ describe Synco::Methods::RSync do
 				server.root = target_path
 			end
 			
-			script.copy(".")
+			script.copy '.', arguments: %W{--archive}
 		end
 		
 		Synco::Runner.new(script).call
@@ -67,30 +67,12 @@ describe Synco::Methods::RSync do
 				end
 			end
 			
-			script.copy(".")
+			script.copy '.', arguments: %W{--archive}
 		end
 		
 		Synco::Runner.new(script).call
 		
 		expect(Fingerprint).to be_identical(master_path, File.join(target_path, Synco::LATEST_NAME))
-	end
-	
-	it 'should append the excludes argument' do
-		script = Synco::Script.build do |script|
-			script.method = Synco::Methods::RSync.new
-			
-			script.server(:master) do |server|
-				server.root = master_path
-			end
-			
-			script.server(:backup) do |server|
-				server.root = target_path
-			end
-			
-			script.copy('.', exclude_from: 'excludes')
-		end
-		
-		expect(script.method.filter_arguments(script.directories.first)).to be == ['--exclude-from', 'excludes']
 	end
 end
 

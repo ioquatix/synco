@@ -48,7 +48,7 @@ module Synco
 		
 		class RSync < Method
 			def default_command
-				['rsync', '--archive', '--stats']
+				['rsync', '--stats']
 			end
 			
 			# This escapes the -e argument to rsync, as it's argv parser is a bit.. unique.
@@ -79,12 +79,6 @@ module Synco
 				return ['-e', escape(command)]
 			end
 			
-			def filter_arguments(directory)
-				if excludes_path = directory.options[:exclude_from]
-					['--exclude-from', excludes_path]
-				end
-			end
-			
 			def call(scope)
 				master_server = scope.master_server
 				target_server = scope.target_server
@@ -93,7 +87,7 @@ module Synco
 				master_server.run(
 					*@command,
 					*@arguments,
-					*filter_arguments(directory),
+					*directory.arguments,
 					*connect_arguments(master_server, target_server),
 					master_server.connection_string(directory, on: master_server),
 					target_server.connection_string(directory, on: master_server)
@@ -113,7 +107,7 @@ module Synco
 			end
 			
 			def compute_incremental_path(directory)
-				incremental_path = File.join(snapshot_name, directory.path)
+				File.join(snapshot_name, directory.path)
 			end
 			
 			def compute_link_arguments(directory, incremental_path)
@@ -138,7 +132,7 @@ module Synco
 				master_server.run(
 					*@command,
 					*@arguments,
-					*filter_arguments(directory),
+					*directory.arguments,
 					*connect_arguments(master_server, target_server),
 					*link_arguments,
 					master_server.connection_string(directory, on: master_server),

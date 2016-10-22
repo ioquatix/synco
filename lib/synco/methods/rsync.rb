@@ -48,7 +48,7 @@ module Synco
 		
 		class RSync < Method
 			def default_command
-				['rsync', '--stats']
+				['rsync']
 			end
 			
 			# This escapes the -e argument to rsync, as it's argv parser is a bit.. unique.
@@ -98,6 +98,10 @@ module Synco
 		end
 		
 		class RSyncSnapshot < RSync
+			def default_command
+				['rsync', '--archive', '--stats']
+			end
+			
 			def snapshot_name
 				@options[:snapshot_name] || SNAPSHOT_NAME
 			end

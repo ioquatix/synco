@@ -27,24 +27,19 @@ module Synco
 	# A specific directory which is relative to the root of a given server. Specific configuration details
 	# such as excludes and other options may be specified.
 	class Directory < Controller
-		def initialize(path, **options)
-			super()
-			
-			@path = self.class.normalize(path)
-			
-			if @path.start_with?('/')
-				raise AbsolutePathError.new("Directory path #{path} may not be absolute!")
+		def initialize(path, arguments: [])
+			if path.start_with?('/')
+				raise AbsolutePathError.new("#{path} must be relative!")
 			end
 			
-			@options = options
+			super()
+			
+			@arguments = arguments
+			@path = self.class.normalize(path)
 		end
 		
 		attr :path
-		attr :options
-		
-		def arguments
-			@options[:arguments]
-		end
+		attr :arguments
 		
 		def depth
 			self.class.depth(@path)

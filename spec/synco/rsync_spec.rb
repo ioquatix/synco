@@ -32,7 +32,7 @@ describe Synco::Methods::RSync do
 	
 	it 'should copy files using rsync' do
 		script = Synco::Script.build do |script|
-			script.method = Synco::Methods::RSync.new
+			script.method = Synco::Methods::RSync.new(arguments: ['--archive'])
 			
 			script.server(:master) do |server|
 				server.root = master_path

@@ -26,4 +26,8 @@ describe Synco::Directory.new(".", arguments: ['--foo']) do
 	it "should have arguments" do
 		expect(subject.arguments).to include('--foo')
 	end
+	
+	it "must be relative path" do
+		expect{Synco::Directory.new("/var")}.to raise_error(ArgumentError)
+	end
 end

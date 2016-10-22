@@ -28,36 +28,24 @@ module Synco
 				['ssh']
 			end
 			
-			# The connection options for ssh
-			# [`:port`]        The remote port to use.
-			# [`:key`]         A specific key file to use.
-			# [`:keys`]        A specific array of key files to use.
-			# [`:timeout`]     How long to wait until connection fails if no response is received.
-			# [`:compression`] Enable compression.
-			# [`:user`]        Connect as a specific user.
-			def command_arguments
-				@options.reject{|_,value| value.nil?}.collect do |key,value|
-					case key
-					when :port
-						['-p', value.to_s]
-					when :key
-						['-i', value]
-					when :keys
-						value.collect { |key_path| ['-i', key_path] } 
-					when :timeout
-						['-o', "ConnectTimeout=#{value.to_i}"]
-					when :batch_mode
-						['-o', "BatchMode=#{value ? 'yes' : 'no'}"]
-					when :compression
-						['-C'] if value
-					when :user
-						['-l', value.to_s]
-					end
-				end.flatten.compact
-			end
-			
-			def connection_command(server, *arguments)
-				super(server, *command_arguments+arguments)
+			def initialize(*command, arguments: [], port: nil, key: nil, user: nil, batch_mode: nil, **options)
+				if port
+					arguments << '-p' << port
+				end
+				
+				if key
+					arguments << '-i' << value
+				end
+				
+				if user
+					arguments << '-l' << value
+				end
+				
+				unless batch_mode.nil?
+					arguments << '-o' << "BatchMode=#{batch_mode ? 'yes' : 'no'}"
+				end
+				
+				super
 			end
 		end
 	end

@@ -19,24 +19,25 @@
 # THE SOFTWARE.
 
 module Synco
+	# Depending on how you have things set up, you'll probably want to add
+	# %wheel ALL=(root) NOPASSWD: /bin/mount
+	# %wheel ALL=(root) NOPASSWD: /bin/umount
+	# to /etc/sudoers.d/synco
 	module LinuxDisk
-		def mounted?(path)
-		end
-		
 		def self.available?(disk_name)
-			File.exist?("/dev/disk/by-label/#{name}")
+			File.exist?("/dev/disk/by-label/#{disk_name}")
 		end
 		
 		def self.mount(path, disk_name = nil)
 			if disk_name
-				system("mount", "-L", disk_name, path)
+				system("sudo", "mount", "-L", disk_name, path)
 			else
-				system("mount", path)
+				system("sudo", "mount", path)
 			end
 		end
 		
 		def self.unmount(path)
-			system("umount", path)
+			system("sudo", "umount", path)
 		end
 	end
 

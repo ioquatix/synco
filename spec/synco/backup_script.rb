@@ -25,6 +25,7 @@ require 'process/group'
 require 'fileutils'
 require 'digest'
 
+require 'synco/scope'
 require 'synco/script'
 
 SYNCO_PATH = File.expand_path("../../bin/synco", __dir__)
@@ -57,6 +58,6 @@ RSpec.shared_context "backup script" do
 	end
 	
 	after(:each) do
-		FileUtils.rm_rf tmp_path
+		# FileUtils.rm_rf tmp_path
 	end
 end

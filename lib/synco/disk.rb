@@ -20,6 +20,13 @@
 
 module Synco
 	module LinuxDisk
+		def mounted?(path)
+		end
+		
+		def self.available?(disk_name)
+			File.exist?("/dev/disk/by-label/#{name}")
+		end
+		
 		def self.mount(path, disk_name = nil)
 			if disk_name
 				system("mount", "-L", disk_name, path)
@@ -35,6 +42,10 @@ module Synco
 
 	module DarwinDisk
 		DISKUTIL = "diskutil"
+		
+		def self.available?(disk_name)
+			system(DISKUTIL, "list", disk_name)
+		end
 		
 		def self.mount(path, disk_name = nil)
 			disk_name ||= File.basename(path)

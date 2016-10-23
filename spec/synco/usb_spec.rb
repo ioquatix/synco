@@ -20,26 +20,37 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'logger'
-require 'synco/script'
-require 'synco/scope'
-require 'synco/methods/scp'
+require 'synco/disk'
+require 'synco/methods/rsync'
+require_relative 'backup_script'
 
-describe Synco::Methods::RSyncSnapshot do
-	xit 'should mount and backup to an attached USB stick' do
+describe Synco::Methods::RSyncSnapshot, if: Synco::Disk.available?('TEST') do
+	include_context "backup script"
+	
+	before(:each) do
+		Synco::Disk.unmount(target_path)
+	end
+	
+	after(:each) do
+		Synco::Disk.unmount(target_path)
+	end
+	
+	it 'should mount and backup to an attached USB stick' do
 		script = Synco::Script.build do |script|
 			script.method = Synco::Methods::RSyncSnapshot.new
 			
+			script.master = :source
+			
 			script.server(:source) do |server|
-				server.root = '/Users/samuel/'
+				server.root = master_path
 			end
 			
 			script.server(:destination) do |server|
-				server.mountpoint = '/Volumes/TEST/'
-				server.root = server.mountpoint + 'samuel'
+				server.mountpoint = target_path
+				server.root = target_path
 				
 				server.on(:prepare) do
-					run "synco", "mount", self.mountpoint
+					target_server.run "synco", "mount", target_server.mountpoint, 'TEST'
 				end
 				
 				# Runs after all directories have been successfully backed up.
@@ -49,11 +60,11 @@ describe Synco::Methods::RSyncSnapshot do
 				end
 				
 				server.on(:finish) do
-					run "synco", "unmount", server.mountpoint
+					target_server.run "synco", "unmount", target_server.mountpoint
 				end
 			end
 			
-			script.backup('Desktop')
+			script.backup('.')
 		end
 		
 		Synco::Runner.new(script).call

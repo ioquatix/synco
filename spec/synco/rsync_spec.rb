@@ -32,7 +32,7 @@ describe Synco::Methods::RSync do
 	
 	it 'should copy files using rsync' do
 		script = Synco::Script.build do |script|
-			script.method = Synco::Methods::RSync.new(arguments: ['--archive'])
+			script.method = Synco::Methods::RSync.new(archive: true)
 			
 			script.server(:master) do |server|
 				server.root = master_path
@@ -42,8 +42,11 @@ describe Synco::Methods::RSync do
 				server.root = target_path
 			end
 			
-			script.copy '.', arguments: %W{--archive}
+			script.copy '.'
 		end
+		
+		expect(script.method.arguments).to include('--archive')
+		expect(script.method.arguments).to_not include('--stats')
 		
 		Synco::Runner.new(script).call
 		
@@ -69,6 +72,8 @@ describe Synco::Methods::RSync do
 			
 			script.copy '.', arguments: %W{--archive}
 		end
+		
+		expect(script.method.arguments).to include('--archive', '--stats')
 		
 		Synco::Runner.new(script).call
 		

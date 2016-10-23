@@ -51,6 +51,18 @@ module Synco
 				['rsync']
 			end
 			
+			def initialize(*command, arguments: [], archive: false, stats: nil, **options)
+				if archive
+					arguments << '--archive'
+				end
+				
+				if stats
+					arguments << '--stats'
+				end
+				
+				super
+			end
+			
 			# This escapes the -e argument to rsync, as it's argv parser is a bit.. unique.
 			def escape(command)
 				case command
@@ -98,8 +110,8 @@ module Synco
 		end
 		
 		class RSyncSnapshot < RSync
-			def default_command
-				['rsync', '--archive', '--stats']
+			def initialize(*command, arguments: [], archive: true, stats: true, **options)
+				super
 			end
 			
 			def snapshot_name

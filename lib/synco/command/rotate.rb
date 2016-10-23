@@ -34,7 +34,7 @@ module Synco
 				options do
 					option "--format <name>", "Set the name of the backup rotations, including strftime expansions.", default: BACKUP_NAME
 					option "--latest <name>", "The name of the latest backup symlink.", default: LATEST_NAME
-					option "--snapshot <name>", "The name of the in-progres backup snapshot.", default: SNAPSHOT_NAME
+					option "--snapshot <name>", "The name of the in-progress backup snapshot.", default: SNAPSHOT_NAME
 					
 					# option "--timezone <name>", "The default timezone for backup timestamps.", default: BACKUP_TIMEZONE
 				end

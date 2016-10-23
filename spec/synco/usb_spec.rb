@@ -69,7 +69,7 @@ describe Synco::Methods::RSyncSnapshot, if: Synco::Disk.available?('TEST') do
 		
 		Synco::Runner.new(script).call
 		
-		Synco::Disk.mount(target_path)
+		Synco::Disk.mount(target_path, 'TEST')
 		
 		expect(Fingerprint).to be_identical(master_path, File.join(target_path, Synco::LATEST_NAME))
 	end

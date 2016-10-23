@@ -34,11 +34,11 @@ module Synco
 				end
 				
 				if key
-					arguments << '-i' << value
+					arguments << '-i' << key
 				end
 				
 				if user
-					arguments << '-l' << value
+					arguments << '-l' << user
 				end
 				
 				unless batch_mode.nil?

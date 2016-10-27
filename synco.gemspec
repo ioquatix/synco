@@ -18,7 +18,7 @@ Gem::Specification.new do |spec|
 	spec.require_paths = ["lib"]
 
 	spec.add_dependency("periodical", "~> 1.1")
-	spec.add_dependency("samovar", "~> 1.2")
+	spec.add_dependency("samovar", "~> 1.3")
 	spec.add_dependency("fingerprint", "~> 2.0")
 	spec.add_dependency("mapping", "~> 1.0")
 	spec.add_dependency("build-files", "~> 1.0")

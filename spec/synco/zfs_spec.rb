@@ -25,7 +25,7 @@ require 'synco/script'
 require 'synco/scope'
 require 'synco/methods/zfs'
 
-describe Synco::Methods::ZFS do
+RSpec.describe Synco::Methods::ZFS do
 	xit 'should mirror two ZFS partitions' do
 		script = Synco::Script.build(master: :source) do |script|
 			script.method = Synco::Methods::ZFS.new

@@ -23,20 +23,18 @@
 require 'synco/server'
 require 'synco/shells/ssh'
 
-module Synco::ShellSpec
-	describe Synco::Shells::SSH do
-		let(:server) {Synco::Server.new('localhost')}
-		
-		it 'should generate a connection command' do
-			expect(subject.connection_command(server)).to be == ['ssh', 'localhost']
-		end
-	end
+RSpec.describe Synco::Shells::SSH do
+	let(:server) {Synco::Server.new('localhost')}
 	
-	describe Synco::Shells::SSH.new(batch_mode: true) do
-		let(:server) {Synco::Server.new('localhost')}
-		
-		it 'should generate a connection command with options' do
-			expect(subject.connection_command(server)).to be == ['ssh', '-o', 'BatchMode=yes', 'localhost']
-		end
+	it 'should generate a connection command' do
+		expect(subject.connection_command(server)).to be == ['ssh', 'localhost']
+	end
+end
+
+RSpec.describe Synco::Shells::SSH.new(batch_mode: true) do
+	let(:server) {Synco::Server.new('localhost')}
+	
+	it 'should generate a connection command with options' do
+		expect(subject.connection_command(server)).to be == ['ssh', '-o', 'BatchMode=yes', 'localhost']
 	end
 end

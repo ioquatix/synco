@@ -25,7 +25,7 @@ require 'synco/methods/scp'
 
 require_relative 'backup_script'
 
-describe Synco::Methods::SCP do
+RSpec.describe Synco::Methods::SCP do
 	include_context "backup script"
 	
 	let(:test_server) {ENV.fetch('TEST_SERVER', 'localhost')}

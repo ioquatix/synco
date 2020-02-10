@@ -24,7 +24,7 @@ require 'synco/disk'
 require 'synco/methods/rsync'
 require_relative 'backup_script'
 
-describe Synco::Methods::RSyncSnapshot, if: Synco::Disk.available?('TEST') do
+RSpec.describe Synco::Methods::RSyncSnapshot, if: Synco::Disk.available?('TEST') do
 	include_context "backup script"
 	
 	before(:each) do

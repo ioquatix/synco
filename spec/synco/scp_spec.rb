@@ -27,7 +27,7 @@ require 'synco/methods/scp'
 
 require_relative 'backup_script'
 
-describe Synco::Methods::SCP do
+RSpec.describe Synco::Methods::SCP do
 	include_context "backup script"
 	
 	it 'should build a script with desired configuration' do

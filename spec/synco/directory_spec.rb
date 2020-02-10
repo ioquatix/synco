@@ -22,7 +22,7 @@
 
 require 'synco/directory'
 
-describe Synco::Directory.new(".", arguments: ['--foo']) do
+RSpec.describe Synco::Directory.new(".", arguments: ['--foo']) do
 	it "should have arguments" do
 		expect(subject.arguments).to include('--foo')
 	end

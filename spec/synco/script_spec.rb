@@ -24,7 +24,7 @@ require 'logger'
 require 'synco/script'
 require 'synco/methods/scp'
 
-describe Synco::Script do
+RSpec.describe Synco::Script do
 	it 'should build a script with desired configuration' do
 		script = Synco::Script.build do |script|
 			script.server(:master) do |server|

@@ -27,7 +27,7 @@ require 'synco/methods/rsync'
 
 require_relative 'backup_script'
 
-describe Synco::Methods::RSync do
+RSpec.describe Synco::Methods::RSync do
 	include_context "backup script"
 	
 	it 'should copy files using rsync' do
@@ -81,7 +81,7 @@ describe Synco::Methods::RSync do
 	end
 end
 
-describe Synco::Methods::RSyncSnapshot do
+RSpec.describe Synco::Methods::RSyncSnapshot do
 	it 'should generate correct command for ssh shell' do
 		expect(subject.escape(['ssh', '-o', 'BatchMode=yes'])).to be == 'ssh -o BatchMode=yes'
 	end

@@ -26,5 +26,4 @@
 
 require 'synco/command'
 
-application = Synco::Command::Top.new(ARGV)
-application.invoke
+Synco::Command::Top.call

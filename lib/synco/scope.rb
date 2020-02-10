@@ -22,7 +22,7 @@ require_relative 'script'
 
 require 'process/group'
 
-require 'logger'
+require 'console'
 require 'delegate'
 
 module Synco
@@ -39,22 +39,13 @@ module Synco
 	end
 	
 	class Runner
-		def initialize(*scripts, logger: nil, verbose: false)
+		include Console
+		
+		def initialize(*scripts)
 			@scripts = scripts
-			
-			@logger = logger || Logger.new($stderr).tap do |logger|
-				logger.formatter = CompactFormatter.new
-				
-				if verbose or ENV['SYNCO_VERBOSE']
-					logger.level = Logger::DEBUG
-				else
-					logger.level = Logger::INFO
-				end
-			end
 		end
 		
 		attr :scripts
-		attr :logger
 		
 		def call
 			start_time = Time.now
@@ -64,7 +55,7 @@ module Synco
 			Process::Group.wait do |group|
 				@scripts.each do |script|
 					Fiber.new do
-						ScriptScope.new(script, @logger, group).call
+						ScriptScope.new(script, logger, group).call
 					end.resume
 				end
 			end

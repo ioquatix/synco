@@ -34,7 +34,7 @@ module Synco
 			one :path, "The disk mount point."
 			one :name, "The symbolic name of the disk to mount, e.g. disk label."
 			
-			def invoke(parent)
+			def call
 				# We may not have permission to make this directory, but we should still try:
 				FileUtils.mkpath(@path) rescue nil
 				
@@ -47,7 +47,7 @@ module Synco
 			
 			one :path, "The disk mount point."
 			
-			def invoke(parent)
+			def call
 				Disk.unmount(@path)
 			end
 		end

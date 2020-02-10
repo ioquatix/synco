@@ -48,21 +48,22 @@ module Synco
 				end
 			end
 			
-			nested '<command>',
+			nested :command, {
 				'spawn' => Spawn,
 				'rotate' => Rotate,
 				'prune' => Prune,
 				'mount' => Mount,
 				'unmount' => Unmount
+			}
 			
-			def invoke(program_name: File.basename($0))
+			def call
 				if @options[:version]
 					puts "synco v#{Synco::VERSION}"
 				elsif @options[:help] or @command.nil?
 					print_usage(program_name)
 				else
 					chdir do
-						@command.invoke(self)
+						@command.call
 					end
 				end
 			end

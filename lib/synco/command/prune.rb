@@ -138,7 +138,7 @@ module Synco
 				end
 			end
 			
-			def invoke(parent)
+			def call
 				backups = current_backups
 				
 				retain, erase = policy.filter(backups, keep: @options[:keep].to_sym, &:time)

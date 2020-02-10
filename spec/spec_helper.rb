@@ -18,22 +18,17 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-# This script takes a given path, and renames it with the given format. 
-# It then ensures that there is a symlink called "latest" that points 
-# to the renamed directory.
+require 'bundler/setup'
+require 'covered/rspec'
 
-require 'samovar'
-
-module Synco
-	module Command
-		class Spawn < Samovar::Command
-				self.description = "Run a command using the synco environment and root directory."
-				
-				split :argv, "Command to spawn."
-				
-				def call
-					Process.exec(*@argv)
-				end
-		end
+RSpec.configure do |config|
+	# Enable flags like --only-failures and --next-failure
+	config.example_status_persistence_file_path = ".rspec_status"
+	
+	# Disable RSpec exposing methods globally on `Module` and `main`
+	config.disable_monkey_patching!
+	
+	config.expect_with :rspec do |c|
+		c.syntax = :expect
 	end
 end

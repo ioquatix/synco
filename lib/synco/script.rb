@@ -23,8 +23,6 @@ require_relative 'server'
 require_relative 'directory'
 require_relative 'controller'
 
-require_relative 'compact_formatter'
-
 require 'socket'
 
 require 'process/group'

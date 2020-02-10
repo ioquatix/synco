@@ -53,7 +53,7 @@ module Synco
 					backup_timestamp.strftime(@options[:format])
 				end
 				
-				def invoke(parent)
+				def call
 					snapshot_name = @options[:snapshot]
 					unless File.exist? snapshot_name
 						$stderr.puts "Snapshot directory #{snapshot_name} does not exist!"

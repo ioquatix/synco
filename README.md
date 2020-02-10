@@ -129,7 +129,7 @@ Please make sure you take the time to educate yourself on the security of such a
 
 If you'd like to dump data before running the backup, it's possible using the event handling mechanisms:
 
-```
+```ruby
 server(:master) do |server|
 	server.host = "server.example.com"
 	server.root = "/"
@@ -143,7 +143,7 @@ end
 
 The exact contents of `mysql-backup.sh` will depend on your requirements, but here is an example:
 
-```
+```bash
 #!/usr/bin/env bash
 
 BACKUP_DIR=/srv/mysql
@@ -165,7 +165,7 @@ done
 
 It is possible to make a [cryptographic checksum of the data](https://github.com/ioquatix/fingerprint). On a filesystem that support immutable snapshots, you can do this before the data is copied. For traditional filesystems, you generally need to do this afterwards.
 
-```
+```ruby
 server(:master) do |server|
 	server.host = "server.example.com"
 	server.root = "/"
@@ -191,7 +191,7 @@ options zfs zfs_admin_snapshot=1
 
 Propagate user permissions for the ZFS partition:
 
-```
+```bash
 sudo zfs allow -ld -u `whoami` create,mount,send,receive,snapshot tank/test
 ```
 
@@ -209,7 +209,7 @@ Firstly, a backup script defaults to the server with the name `:master` as the m
 
 However, it is possible instead to specify a hostname, e.g. `primary.example.com`. Then, specify several servers, e.g. `s01.example.com`, `s02.example.com` and so on:
 
-```
+```ruby
 Synco::run_script do |script|
 	script.method = Synco::Methods::RSync.new(archive: true)
 	

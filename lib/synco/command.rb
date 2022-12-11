@@ -29,6 +29,8 @@ require_relative 'command/rotate'
 require_relative 'command/prune'
 require_relative 'command/disk'
 
+require_relative 'version'
+
 module Synco
 	module Command
 		class Top < Samovar::Command

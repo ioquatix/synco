@@ -1,6 +1,10 @@
 #!/usr/bin/env rspec
+# frozen_string_literal: true
 
-# Copyright, 2015, by Samuel G. D. Williams. <http://www.codeotaku.com>
+# Released under the MIT License.
+# Copyright, 2009-2024, by Samuel Williams.
+
+# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,44 +24,31 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'fingerprint'
-require 'process/group'
-require 'fileutils'
-require 'digest'
+require "synco/script"
+require "synco/methods/scp"
 
-require 'synco/scope'
-require 'synco/script'
-
-SYNCO_PATH = File.expand_path("../../bin/synco", __dir__)
-
-RSpec.shared_context "backup script" do
-	def create_files(master_path, target_path)
-		FileUtils.rm_rf master_path
-		FileUtils.rm_rf target_path
-		
-		FileUtils.mkdir_p master_path
-		FileUtils.mkdir_p target_path
-		
-		(1...10).each do |i|
-			path = File.join(master_path, i.to_s)
-
-			FileUtils.mkdir(path)
-
-			text = Digest::MD5.hexdigest(i.to_s)
-
-			File.open(File.join(path, i.to_s), "w") { |f| f.write(text) }
+describe Synco::Script do
+	it "should build a script with desired configuration" do
+		script = Synco::Script.build do |script|
+			script.server(:master) do |server|
+			end
+			
+			script.server(:backup) do |server|
+				server.root = "backup"
+				
+				server.on(:prepare) do
+					run "synco", "mount", chdir: server.root
+				end
+			end
 		end
-	end
-	
-	let(:tmp_path) {File.join(__dir__, 'tmp')}
-	let(:master_path) {File.join(__dir__, 'tmp/master')}
-	let(:target_path) {File.join(__dir__, 'tmp/target')}
-	
-	before(:each) do
-		create_files(master_path, target_path)
-	end
-	
-	after(:each) do
-		# FileUtils.rm_rf tmp_path
+		
+		# After building, everything should be frozen..
+		expect(script).to be(:frozen?)
+		
+		# We should have the two servers defined:
+		expect(script.servers).to have_keys(:master, :backup)
+		
+		# We should have a single event for backup server:
+		expect(script[:backup].events).to have_keys(:prepare)
 	end
 end

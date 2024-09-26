@@ -1,29 +1,14 @@
-# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# frozen_string_literal: true
 
-require_relative 'script'
+# Released under the MIT License.
+# Copyright, 2016-2024, by Samuel Williams.
 
-require 'process/group'
+require_relative "script"
 
-require 'console'
-require 'delegate'
+require "process/group"
+
+require "console"
+require "delegate"
 
 module Synco
 	class CommandFailure < RuntimeError
@@ -39,8 +24,6 @@ module Synco
 	end
 	
 	class Runner
-		include Console
-		
 		def initialize(*scripts)
 			@scripts = scripts
 		end
@@ -48,28 +31,26 @@ module Synco
 		attr :scripts
 		
 		def call
-			start_time = Time.now
-			
-			logger.info "===== Starting at #{start_time} ====="
+			Console.info(self, "Running scripts...")
 			
 			Process::Group.wait do |group|
 				@scripts.each do |script|
 					Fiber.new do
-						ScriptScope.new(script, logger, group).call
+						ScriptScope.new(script, group).call
 					end.resume
 				end
 			end
+		rescue => error
+			Console::Event::Failure.for(error).emit(self)
+			raise
 		ensure
-			end_time = Time.now
-			logger.info "[Time]: (#{end_time - start_time}s)."
-			logger.info "===== Finished backup at #{end_time} ====="
+			Console.info(self, "Finished running scripts.")
 		end
 	end
 	
 	class ScriptScope
-		def initialize(script, logger, group)
+		def initialize(script, group)
 			@script = script
-			@logger = logger
 			@group = group
 			
 			@current_server = ServerScope.new(@script.current_server, self)
@@ -77,7 +58,6 @@ module Synco
 		end
 		
 		attr :script
-		attr :logger
 		attr :group
 		attr :master_server
 		attr :current_server
@@ -88,18 +68,17 @@ module Synco
 		
 		def call
 			if @script.running_on_master?
-				logger.info "We are the master server..."
+				Console.info(self, "We are the master server...")
 			else
-				logger.info "We are not the master server..."
-				logger.info "Master server is #{@master}..."
+				Console.info(self, "We are not the master server...", master: @master)
 			end
-
+			
 			@script.try(self) do
 				# This allows events to run on the master server if specified, before running any backups.
 				
 				@master_server.try(master_target_server) do
 					method.try(self) do
-						logger.info "Running backups for server #{@current_server}..."
+						Console.info(self, "Running backups...", server: @current_server)
 						
 						run_servers(group)
 					end
@@ -126,16 +105,15 @@ module Synco
 		def run_servers(group)
 			target_servers do |server|
 				sync_scope = TargetScope.new(self, server)
-
-				logger.info "===== Processing ====="
-				logger.info "[Master]: #{master_server}"
-				logger.info "[Target]: #{server}"
+				
+				Console.info(self, "Running script...", master: @master_server, target: server)
 				
 				server.try(sync_scope) do
 					@script.directories.each do |directory|
 						directory_scope = DirectoryScope.new(sync_scope, directory)
-
-						logger.info "[Directory]: #{directory}"
+						
+						Console.info(self, "Processing directory...", directory: directory)
+						
 						directory.try(directory_scope) do
 							method.call(directory_scope)
 						end
@@ -146,9 +124,8 @@ module Synco
 	end
 	
 	class LogPipe < DelegateClass(IO)
-		def initialize(logger, level = :info)
+		def initialize(logger: Console, level: :info)
 			@input, @output = IO.pipe
-			@logger = logger
 			
 			super(@output)
 			
@@ -177,10 +154,6 @@ module Synco
 			@from = from
 		end
 		
-		def logger
-			@logger ||= @script_scope.logger
-		end
-		
 		def group
 			@group ||= @script_scope.group
 		end
@@ -195,13 +168,14 @@ module Synco
 				command = self.connection_command + ["--"] + command
 			end
 			
-			logger.info("shell") {[command, options]}
+			Console::Event::Spawn.for(*command, **options).emit(self)
 			
-			options[:out] ||= LogPipe.new(logger)
-			options[:err] ||= LogPipe.new(logger, :error)
+			options[:out] ||= LogPipe.new
+			options[:err] ||= LogPipe.new(level: :error)
 			
 			status = self.group.spawn(*command, **options)
-			logger.debug{"Process finished: #{status}."}
+			
+			Console.info(self, "Command completed.", status: status)
 			
 			options[:out].close
 			options[:err].close
@@ -219,8 +193,8 @@ module Synco
 			@target_server = ServerScope.new(target, script_scope, script_scope.current_server)
 		end
 		
-		def run(*arguments)
-			@target_server.run(*arguments)
+		def run(...)
+			@target_server.run(...)
 		end
 		
 		attr :target_server

@@ -1,31 +1,36 @@
+# frozen_string_literal: true
 
-require_relative 'lib/synco/version'
+require_relative "lib/synco/version"
 
 Gem::Specification.new do |spec|
-	spec.name          = "synco"
-	spec.version       = Synco::VERSION
-	spec.authors       = ["Samuel Williams"]
-	spec.email         = ["samuel.williams@oriontransfer.co.nz"]
-	spec.summary       = %q{Synco is a tool for scripted synchronization and backups.}
-	spec.homepage      = ""
-	spec.license       = "MIT"
+	spec.name = "synco"
+	spec.version = Synco::VERSION
 	
-	spec.files         = `git ls-files -z`.split("\x0")
-	spec.executables   = spec.files.grep(%r{^bin/}) { |f| File.basename(f) }
-	spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
-	spec.require_paths = ["lib"]
+	spec.summary = "Synco is a tool for scripted synchronization and backups."
+	spec.authors = ["Samuel Williams"]
+	spec.license = "MIT"
 	
-	spec.add_dependency("periodical", "~> 1.1")
-	spec.add_dependency("samovar", "~> 2.0")
-	spec.add_dependency("fingerprint", "~> 3.0")
-	spec.add_dependency("mapping", "~> 1.0")
-	spec.add_dependency("build-files", "~> 1.0")
-	spec.add_dependency("process-group", "~> 1.1")
+	spec.cert_chain  = ["release.cert"]
+	spec.signing_key = File.expand_path("~/.gem/release.pem")
 	
-	spec.add_dependency("lockfile")
+	spec.homepage = "https://github.com/ioquatix/synco"
 	
-	spec.add_development_dependency "covered"
-	spec.add_development_dependency "bundler"
-	spec.add_development_dependency "rspec", "~> 3.4"
-	spec.add_development_dependency "rake"
+	spec.metadata = {
+		"funding_uri" => "https://github.com/sponsors/ioquatix/",
+		"source_code_uri" => "https://github.com/ioquatix/synco.git",
+	}
+	
+	spec.files = Dir.glob(["{bin,lib}/**/*", "*.md"], File::FNM_DOTMATCH, base: __dir__)
+	
+	spec.executables = ["synco"]
+	
+	spec.required_ruby_version = ">= 3.1"
+	
+	spec.add_dependency "build-files", "~> 1.0"
+	spec.add_dependency "fingerprint", "~> 3.0"
+	spec.add_dependency "lockfile"
+	spec.add_dependency "mapping", "~> 1.0"
+	spec.add_dependency "periodical", "~> 1.1"
+	spec.add_dependency "process-group", "~> 1.1"
+	spec.add_dependency "samovar", "~> 2.0"
 end

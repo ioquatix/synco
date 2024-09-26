@@ -1,36 +1,21 @@
-# Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
+# frozen_string_literal: true
 
-require_relative 'method'
-require_relative 'server'
-require_relative 'directory'
-require_relative 'controller'
+# Released under the MIT License.
+# Copyright, 2008-2024, by Samuel Williams.
 
-require 'socket'
+require_relative "method"
+require_relative "server"
+require_relative "directory"
+require_relative "controller"
 
-require 'process/group'
+require "socket"
+
+require "process/group"
 
 module Synco
 	# The main backup/synchronisation mechanism is the backup script. It specifies all servers and directories, and these are then combined specifically to produce the desired data replication behaviour.
 	class Script < Controller
-		def initialize(method: nil, servers: {}, directories: [], master: :master, logger: nil)
+		def initialize(method: nil, servers: {}, directories: [], master: :master)
 			super()
 			
 			@method = method
@@ -87,7 +72,7 @@ module Synco
 			else
 				# Find a server config that specifies the local host
 				@servers.values.find{|server| localhost?(server.host)}
-			end || Server.new('localhost')
+			end || Server.new("localhost")
 		end
 		
 		def current_server

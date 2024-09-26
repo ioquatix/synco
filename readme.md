@@ -2,25 +2,27 @@
 
 Synco is a tool for scripted synchronization and backups. It provides a custom Ruby DSL for describing backup and synchronization tasks involving one more more system and disk. It is designed to provide flexibility while reducing the complexity multi-server backups.
 
-* Single and multi-server data synchronization.
-* Incremental backups both locally and remotely.
-* Backup staging and coordination.
-* Backup verification using [Fingerprint](https://github.com/ioquatix/fingerprint).
-* Data backup redundancy controlled via DNS.
+  - Single and multi-server data synchronization.
+  - Incremental backups both locally and remotely.
+  - Backup staging and coordination.
+  - Backup verification using [Fingerprint](https://github.com/ioquatix/fingerprint).
+  - Data backup redundancy controlled via DNS.
+
+[![Development Status](https://github.com/ioquatix/synco/workflows/Test/badge.svg)](https://github.com/ioquatix/synco/actions?workflow=Test)
 
 ## Installation
 
 Add this line to your application's Gemfile:
 
-	gem 'synco'
+    gem 'synco'
 
 And then execute:
 
-	$ bundle
+    $ bundle
 
 Or install it yourself as:
 
-	$ gem install synco
+    $ gem install synco
 
 ## Usage
 
@@ -28,7 +30,7 @@ Synco imposes a particular structure regarding the organisation of backup script
 
 A simple backup script might look something like this:
 
-```ruby
+``` ruby
 #!/usr/bin/env ruby
 
 require 'synco'
@@ -59,7 +61,7 @@ This will produce an identical copy using rsync of the specified directories. As
 
 Building on the above backup, you can use `Synco::Methods::RSyncSnapshot` which supports snapshot based backups. It creates a snapshot into a sub-directory called `latest.snapshot` and uses RSync's `--link-dest` to hard-link files when unchanged. Synco provides scripts to rotate and prune these backups as required, but you must invoke them as part of the script:
 
-```ruby
+``` ruby
 server(:backup) do |server|
 	server.host = "backup.example.com"
 	server.root = "/"
@@ -73,7 +75,7 @@ end
 
 These commands can also be run from the command line.
 
-```
+``` 
 rotate [--format <name>] [--latest <name>] [--snapshot <name>]
 	Rotate a backup snapshot into a timestamped directory.
 
@@ -100,7 +102,7 @@ prune [--hourly <count>] [--daily <count>] [--weekly <count>] [--monthly <count>
 
 Synco supports mounting disks before the backup begins and unmounting them after done. The specifics of this process may require some adjustment based on your OS. For example on linux, `sudo` is used to invoke `mount` and `umount`.
 
-```ruby
+``` ruby
 server(:destination) do |server|
 	self.mountpoint = '/mnt/backups'
 	self.root = File.join(server.mountpoint, 'laptop')
@@ -118,10 +120,8 @@ end
 
 On Linux, you might want to create the file `/etc/sudoers.d/synco` with the following contents:
 
-```
-%wheel ALL=(root) NOPASSWD: /bin/mount
-%wheel ALL=(root) NOPASSWD: /bin/umount
-```
+    %wheel ALL=(root) NOPASSWD: /bin/mount
+    %wheel ALL=(root) NOPASSWD: /bin/umount
 
 Please make sure you take the time to educate yourself on the security of such a setup.
 
@@ -129,7 +129,7 @@ Please make sure you take the time to educate yourself on the security of such a
 
 If you'd like to dump data before running the backup, it's possible using the event handling mechanisms:
 
-```ruby
+``` ruby
 server(:master) do |server|
 	server.host = "server.example.com"
 	server.root = "/"
@@ -143,7 +143,7 @@ end
 
 The exact contents of `mysql-backup.sh` will depend on your requirements, but here is an example:
 
-```bash
+``` bash
 #!/usr/bin/env bash
 
 BACKUP_DIR=/srv/mysql
@@ -165,7 +165,7 @@ done
 
 It is possible to make a [cryptographic checksum of the data](https://github.com/ioquatix/fingerprint). On a filesystem that support immutable snapshots, you can do this before the data is copied. For traditional filesystems, you generally need to do this afterwards.
 
-```ruby
+``` ruby
 server(:master) do |server|
 	server.host = "server.example.com"
 	server.root = "/"
@@ -185,13 +185,11 @@ Fingerprint is used in many of the specs to verify file copies.
 
 Synco can manage synchronization and backups of ZFS partitions. However, to use the standard tools, it is necessary to enable `zfs_admin_snapshot`, in `/etc/modprobe.d/zfs.conf`:
 
-```
-options zfs zfs_admin_snapshot=1
-```
+    options zfs zfs_admin_snapshot=1
 
 Propagate user permissions for the ZFS partition:
 
-```bash
+``` bash
 sudo zfs allow -ld -u `whoami` create,mount,send,receive,snapshot tank/test
 ```
 
@@ -209,7 +207,7 @@ Firstly, a backup script defaults to the server with the name `:master` as the m
 
 However, it is possible instead to specify a hostname, e.g. `primary.example.com`. Then, specify several servers, e.g. `s01.example.com`, `s02.example.com` and so on:
 
-```ruby
+``` ruby
 Synco::run_script do |script|
 	script.method = Synco::Methods::RSync.new(archive: true)
 	
@@ -233,32 +231,18 @@ When you run the script, the behaviour will depend on whether `primary.example.c
 
 ## Contributing
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+We welcome contributions to this project.
 
-## License
+1.  Fork it.
+2.  Create your feature branch (`git checkout -b my-new-feature`).
+3.  Commit your changes (`git commit -am 'Add some feature'`).
+4.  Push to the branch (`git push origin my-new-feature`).
+5.  Create new Pull Request.
 
-Released under the MIT license.
+### Developer Certificate of Origin
 
-Copyright, 2016, by [Samuel G. D. Williams](http://www.codeotaku.com/samuel-williams).
+In order to protect users of this project, we require all contributors to comply with the [Developer Certificate of Origin](https://developercertificate.org/). This ensures that all contributions are properly licensed and attributed.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+### Community Guidelines
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+This project is best served by a collaborative and respectful environment. Treat each other professionally, respect differing viewpoints, and engage constructively. Harassment, discrimination, or harmful behavior is not tolerated. Communicate clearly, listen actively, and support one another. If any issues arise, please inform the project maintainers.

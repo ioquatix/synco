@@ -1,4 +1,8 @@
 #!/usr/bin/env rspec
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2016-2024, by Samuel Williams.
 
 # Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
@@ -20,31 +24,22 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'logger'
-require 'synco/script'
-require 'synco/scope'
-require 'synco/methods/zfs'
+require "synco/server"
+require "synco/shells/ssh"
 
-RSpec.describe Synco::Methods::ZFS do
-	xit 'should mirror two ZFS partitions' do
-		script = Synco::Script.build(master: :source) do |script|
-			script.method = Synco::Methods::ZFS.new
-			
-			script.server(:master) do |server|
-				server.host = 'hinoki.local'
-				server.root = '/tank/test/source'
-			end
-			
-			script.server(:backup) do |server|
-				server.host = 'hinoki.local'
-				server.root = '/tank/test/destination'
-			end
-			
-			script.copy("./")
+describe Synco::Shells::SSH do
+	let(:shell) {subject.new}
+	let(:server) {Synco::Server.new("localhost")}
+	
+	it "should generate a connection command" do
+		expect(shell.connection_command(server)).to be == ["ssh", "localhost"]
+	end
+	
+	with "batch mode" do
+		let(:shell) {subject.new(batch_mode: true)}
+		
+		it "should generate a connection command with options" do
+			expect(shell.connection_command(server)).to be == ["ssh", "-o", "BatchMode=yes", "localhost"]
 		end
-		
-		Synco::Runner.new(script).call
-		
-		expect(Fingerprint).to be_identical(script[:master].root, script[:backup].root)
 	end
 end

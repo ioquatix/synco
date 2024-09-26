@@ -1,4 +1,8 @@
 #!/usr/bin/env rspec
+# frozen_string_literal: true
+
+# Released under the MIT License.
+# Copyright, 2016-2024, by Samuel Williams.
 
 # Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
@@ -20,17 +24,16 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-require 'logger'
-require 'synco/script'
-require 'synco/scope'
-require 'synco/methods/rsync'
+require "synco/script"
+require "synco/scope"
+require "synco/methods/rsync"
 
-require_relative 'backup_script'
+require "synco/backup_script_context"
 
-RSpec.describe Synco::Methods::RSync do
-	include_context "backup script"
+describe Synco::Methods::RSync do
+	include_context Synco::BackupScriptContext
 	
-	it 'should copy files using rsync' do
+	it "should copy files using rsync" do
 		script = Synco::Script.build do |script|
 			script.method = Synco::Methods::RSync.new(archive: true)
 			
@@ -42,18 +45,18 @@ RSpec.describe Synco::Methods::RSync do
 				server.root = target_path
 			end
 			
-			script.copy '.'
+			script.copy "."
 		end
 		
-		expect(script.method.arguments).to include('--archive')
-		expect(script.method.arguments).to_not include('--stats')
+		expect(script.method.arguments).to have_value(be == "--archive")
+		expect(script.method.arguments).not.to have_value(be == "--stats")
 		
 		Synco::Runner.new(script).call
 		
-		expect(Fingerprint).to be_identical(master_path, target_path)
+		expect(Fingerprint).to be(:identical?, master_path, target_path)
 	end
 	
-	it 'should copy files using rsync snapshot' do
+	it "should copy files using rsync snapshot" do
 		script = Synco::Script.build do |script|
 			script.method = Synco::Methods::RSyncSnapshot.new
 			
@@ -65,25 +68,28 @@ RSpec.describe Synco::Methods::RSync do
 				server.root = target_path
 				
 				server.on(:success) do
-					run SYNCO_PATH, "rotate", chdir: target_server.root
-					run SYNCO_PATH, "prune", chdir: target_server.root
+					run Synco::SYNCO_PATH, "rotate", chdir: target_server.root
+					run Synco::SYNCO_PATH, "prune", chdir: target_server.root
 				end
 			end
 			
-			script.copy '.', arguments: %W{--archive}
+			script.copy ".", arguments: %W{--archive}
 		end
 		
-		expect(script.method.arguments).to include('--archive', '--stats')
+		expect(script.method.arguments).to have_value(be == "--archive")
+		expect(script.method.arguments).to have_value(be == "--stats")
 		
 		Synco::Runner.new(script).call
 		
-		expect(Fingerprint).to be_identical(master_path, File.join(target_path, Synco::LATEST_NAME))
+		expect(Fingerprint).to be(:identical?, master_path, File.join(target_path, Synco::LATEST_NAME))
 	end
 end
 
-RSpec.describe Synco::Methods::RSyncSnapshot do
-	it 'should generate correct command for ssh shell' do
-		expect(subject.escape(['ssh', '-o', 'BatchMode=yes'])).to be == 'ssh -o BatchMode=yes'
+describe Synco::Methods::RSyncSnapshot do
+	let(:method) {subject.new}
+	
+	it "should generate correct command for ssh shell" do
+		expect(method.escape(["ssh", "-o", "BatchMode=yes"])).to be == "ssh -o BatchMode=yes"
 	end
 end
 	

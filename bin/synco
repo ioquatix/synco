@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 # Copyright, 2016, by Samuel G. D. Williams. <http://www.codeotaku.com>
 # 
@@ -24,6 +25,6 @@
 # It then ensures that there is a symlink called "latest" that points 
 # to the renamed directory.
 
-require 'synco/command'
+require "synco/command"
 
 Synco::Command::Top.call

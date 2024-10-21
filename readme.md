@@ -1,4 +1,4 @@
-# Synco ![Development](https://github.com/ioquatix/synco/workflows/Development/badge.svg)
+# Synco
 
 Synco is a tool for scripted synchronization and backups. It provides a custom Ruby domain specific language (DSL) for describing backup and synchronization tasks involving one more more system and disk. It is designed to provide flexibility while reducing the complexity multi-server backups.
 

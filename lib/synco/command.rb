@@ -47,7 +47,7 @@ module Synco
 				if @options[:version]
 					puts "synco v#{Synco::VERSION}"
 				elsif @options[:help] or @command.nil?
-					print_usage(program_name)
+					print_usage
 				else
 					chdir do
 						@command.call

@@ -1,0 +1,6 @@
+getting-started:
+  order: 10
+backup-policy:
+  order: 50
+backup-script:
+  order: 60

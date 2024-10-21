@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
 	spec.homepage = "https://github.com/ioquatix/synco"
 	
 	spec.metadata = {
+		"documentation_uri" => "https://ioquatix.github.io/synco/",
 		"funding_uri" => "https://github.com/sponsors/ioquatix/",
 		"source_code_uri" => "https://github.com/ioquatix/synco.git",
 	}

@@ -4,5 +4,5 @@
 # Copyright, 2008-2024, by Samuel Williams.
 
 module Synco
-	VERSION = "1.2.0"
+	VERSION = "1.3.0"
 end
